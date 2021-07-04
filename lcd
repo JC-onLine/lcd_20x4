@@ -1,0 +1,76 @@
+#!/usr/bin/zsh
+LCD=/dev/ttyUSB0
+
+function init() {
+	echo "\xA0" > $LCD
+}
+
+function gotoxy() {
+	echo "\xA1\x$1\x$2" > $LCD
+}
+
+function print() {
+	echo $1 > $LCD
+}
+
+function lcdon() {
+	echo "\xA5\x01" > $LCD
+	echo "Display on"
+}
+
+function lcdoff() {
+	echo "\xA5\x02" > $LCD
+	echo "Display off"
+}
+function temp() {
+	sed "s/\(..\)\(.\).*/\1.\2 C/" < /sys/class/thermal/thermal_zone0/temp > $LCD
+}
+
+function cursoron() {
+	echo "\xA3\x0E" > $LCD
+}
+
+function cursoroff() {
+	echo "\xA3\x0C" > $LCD
+}
+
+
+#main
+#init
+#echo "\xA0" > $LCD
+#gotoxy 1 1
+#cat /proc/cpuinfo | grep MHz > $LCD
+
+#if [ -f "$LCD" ] ; then
+
+case $1 in
+	off)
+		lcdoff
+	;;
+	on)
+		lcdon
+	;;
+	cls | clear)
+		init
+		cursoroff
+	;;
+	xy)
+		gotoxy $2 $3
+		if [[ $4 == "temp" ]]; then
+			temp
+		fi
+	;;
+	temp)
+		temp
+	;;
+	cursoroff)
+		cursoroff
+	;;
+	cursoron)
+		cursoron
+	;;
+esac
+#else
+#	echo "Display not found"
+#fi
+

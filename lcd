@@ -48,7 +48,6 @@ function loop() {
 	if [[ $1 =~ [0-9]+ ]]; then
 		./lcd clear
 		./lcd printxy 0 0 "CPU"
-		# ./lcd xy 0 1
 		./lcd printxy 0 1 "RAM"
 		while [[ 1 ]]; do
 			./lcd xy 4 0 temp
@@ -61,50 +60,51 @@ function loop() {
 }
 
 #main
-case $1 in
-	off)
-		lcdoff
-	;;
-	on)
-		lcdon
-	;;
-	cls | clear)
-		init
-		cursoroff
-	;;
-	xy)
-		gotoxy $2 $3
-		if [[ $4 == "temp" ]]; then
+if [[ -e $LCD ]]; then
+	case $1 in
+		off)
+			lcdoff
+		;;
+		on)
+			lcdon
+		;;
+		cls | clear)
+			init
+			cursoroff
+		;;
+		xy)
+			gotoxy $2 $3
+			if [[ $4 == "temp" ]]; then
+				temp
+			elif [[ $4 == "ram100" ]]; then
+				ram100
+			fi
+		;;
+		print)
+		  print $2
+		;;
+		printxy)
+		  printxy $2 $3 $4
+		;;
+		temp)
 			temp
-		elif [[ $4 == "ram100" ]]; then
+		;;
+		cursoroff)
+			cursoroff
+		;;
+		cursoron)
+			cursoron
+		;;
+		uptime)
+		  uptime
+		;;
+		ram100)
 			ram100
-		fi
-	;;
-	print)
-	  print $2
-	;;
-	printxy)
-	  printxy $2 $3 $4
-	;;
-	temp)
-		temp
-	;;
-	cursoroff)
-		cursoroff
-	;;
-	cursoron)
-		cursoron
-	;;
-	uptime)
-	  uptime
-	;;
-	ram100)
-		ram100
-	;;
-	loop)
-	  loop $2
-	;;
-esac
-#else
-#	echo "Display not found"
-#fi
+		;;
+		loop)
+		  loop $2
+		;;
+	esac
+else
+	echo "Display $LCD not found"
+fi

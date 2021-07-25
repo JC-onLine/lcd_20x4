@@ -23,7 +23,13 @@ function lcdoff() {
 	echo "Display off"
 }
 function temp() {
-	sed "s/\(..\)\(.\).*/\1.\2 C/" < /sys/class/thermal/thermal_zone0/temp > $LCD
+#	sed "s/\(..\)\(.\).*/\1.\2 C/" < /sys/class/thermal/thermal_zone0/temp > $LCD
+	sensors | grep -E "^(CPU Temp|Core 0)" | awk '{print $3}'  > $LCD
+}
+
+function uptime() {
+	uptime -s | awk "{print $2}" > $LCD
+	# uptime -s > $LCD
 }
 
 function cursoron() {
@@ -34,15 +40,22 @@ function cursoroff() {
 	echo "\xA3\x0C" > $LCD
 }
 
+function degre() {
+	echo "\xDF" > $LCD
+}
+function loop() {
+	./lcd clear
+	./lcd print "CPU:"
+	./lcd xy 0 1
+	# ./lcd print "Uptime:"
+	while [[ 1 ]]; do
+		./lcd xy 8 0 temp
+		# ./lcd xy 8 1 uptime
+		sleep 3
+	done
+}
 
 #main
-#init
-#echo "\xA0" > $LCD
-#gotoxy 1 1
-#cat /proc/cpuinfo | grep MHz > $LCD
-
-#if [ -f "$LCD" ] ; then
-
 case $1 in
 	off)
 		lcdoff
@@ -58,7 +71,12 @@ case $1 in
 		gotoxy $2 $3
 		if [[ $4 == "temp" ]]; then
 			temp
+		elif [[ $4 == "uptime" ]]; then
+			uptime
 		fi
+	;;
+	print)
+	  print $2
 	;;
 	temp)
 		temp
@@ -69,8 +87,13 @@ case $1 in
 	cursoron)
 		cursoron
 	;;
+	uptime)
+	  uptime
+	;;
+	loop)
+	  loop
+	;;
 esac
 #else
 #	echo "Display not found"
 #fi
-

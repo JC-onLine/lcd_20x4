@@ -45,15 +45,19 @@ function ram100() {
 	free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}' > $LCD
 }
 function loop() {
-	./lcd clear
-	./lcd printxy 0 0 "CPU"
-	# ./lcd xy 0 1
-	./lcd printxy 0 1 "RAM"
-	while [[ 1 ]]; do
-		./lcd xy 4 0 temp
-		./lcd xy 4 1 ram100
-		sleep 3
-	done
+	if [[ $1 =~ [0-9]+ ]]; then
+		./lcd clear
+		./lcd printxy 0 0 "CPU"
+		# ./lcd xy 0 1
+		./lcd printxy 0 1 "RAM"
+		while [[ 1 ]]; do
+			./lcd xy 4 0 temp
+			./lcd xy 4 1 ram100
+			sleep $1
+		done
+	else
+		echo "Utilisation : lcd loop [frequency in second]"
+  fi
 }
 
 #main
@@ -98,7 +102,7 @@ case $1 in
 		ram100
 	;;
 	loop)
-	  loop
+	  loop $2
 	;;
 esac
 #else

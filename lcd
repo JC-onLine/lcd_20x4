@@ -4,20 +4,22 @@ LCD=/dev/ttyUSB0
 function init() {
 	echo "\xA0" > $LCD
 }
-
 function gotoxy() {
 	echo "\xA1\x$1\x$2" > $LCD
 }
-
 function print() {
 	echo $1 > $LCD
 }
-
+function printxy() {
+	echo "\xA1\x$1\x$2" > $LCD
+	echo $3 > $LCD
+	# gotoxy $1 $2
+	# print $3
+}
 function lcdon() {
 	echo "\xA5\x01" > $LCD
 	echo "Display on"
 }
-
 function lcdoff() {
 	echo "\xA5\x02" > $LCD
 	echo "Display off"
@@ -26,31 +28,30 @@ function temp() {
 #	sed "s/\(..\)\(.\).*/\1.\2 C/" < /sys/class/thermal/thermal_zone0/temp > $LCD
 	sensors | grep -E "^(CPU Temp|Core 0)" | awk '{print $3}'  > $LCD
 }
-
 function uptime() {
 	uptime -s | awk "{print $2}" > $LCD
 	# uptime -s > $LCD
 }
-
 function cursoron() {
 	echo "\xA3\x0E" > $LCD
 }
-
 function cursoroff() {
 	echo "\xA3\x0C" > $LCD
 }
-
 function degre() {
 	echo "\xDF" > $LCD
 }
+function ram100() {
+	free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}' > $LCD
+}
 function loop() {
 	./lcd clear
-	./lcd print "CPU:"
-	./lcd xy 0 1
-	# ./lcd print "Uptime:"
+	./lcd printxy 0 0 "CPU"
+	# ./lcd xy 0 1
+	./lcd printxy 0 1 "RAM"
 	while [[ 1 ]]; do
-		./lcd xy 8 0 temp
-		# ./lcd xy 8 1 uptime
+		./lcd xy 4 0 temp
+		./lcd xy 4 1 ram100
 		sleep 3
 	done
 }
@@ -71,12 +72,15 @@ case $1 in
 		gotoxy $2 $3
 		if [[ $4 == "temp" ]]; then
 			temp
-		elif [[ $4 == "uptime" ]]; then
-			uptime
+		elif [[ $4 == "ram100" ]]; then
+			ram100
 		fi
 	;;
 	print)
 	  print $2
+	;;
+	printxy)
+	  printxy $2 $3 $4
 	;;
 	temp)
 		temp
@@ -89,6 +93,9 @@ case $1 in
 	;;
 	uptime)
 	  uptime
+	;;
+	ram100)
+		ram100
 	;;
 	loop)
 	  loop

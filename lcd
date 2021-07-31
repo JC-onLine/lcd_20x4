@@ -1,5 +1,7 @@
 #!/usr/bin/zsh
 LCD=/dev/ttyUSB0
+GLOBAL_BAR_ON="="
+GLOBAL_BAR_OFF="-"
 
 function init() {
 	echo "\xA0" > $LCD
@@ -7,14 +9,12 @@ function init() {
 function gotoxy() {
 	echo "\xA1\x$1\x$2" > $LCD
 }
-function print() {
-	echo $1 > $LCD
-}
+#function print() {
+#	echo $1 > $LCD
+#}
 function printxy() {
 	echo "\xA1\x$1\x$2" > $LCD
 	echo $3 > $LCD
-	# gotoxy $1 $2
-	# print $3
 }
 function lcdon() {
 	echo "\xA5\x01" > $LCD
@@ -24,9 +24,73 @@ function lcdoff() {
 	echo "\xA5\x02" > $LCD
 	echo "Display off"
 }
-function temp() {
-#	sed "s/\(..\)\(.\).*/\1.\2 C/" < /sys/class/thermal/thermal_zone0/temp > $LCD
-	sensors | grep -E "^(CPU Temp|Core 0)" | awk '{print $3}'  > $LCD
+function pgbar() {
+	# param1: X display position.
+	# param2: Y display position.
+	# param3: bar lengt in caracters.
+	# param4: Value in %.
+	X=$1
+	Y=$2
+	BAR_SIZE=$3
+	BAR_ON=$4
+	BAR_OFF=$5
+	VALUE=$6
+	gotoxy $X $Y
+	SCALE=$((($BAR_SIZE * $VALUE) / 100))
+	echo "Result: " $SCALE
+	for (( i=1; i<=$BAR_SIZE; i++ )); do
+		if [ $i -le $SCALE ]; then
+			echo -ne $BAR_ON > $LCD
+		else
+			echo -ne $BAR_OFF > $LCD
+		fi
+	done	
+	#echo "" > $LCD
+}
+function cputemp() {
+	X_VAL=4
+	Y_VAL=0
+	X_BAR=11
+	BAR_SIZE=8
+	gotoxy $X_VAL $Y_VAL
+	if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
+		VALUE=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
+		echo $VALUE  > $LCD
+#		pgbar $X_BAR Y_VAL $BAR_SIZE $GLOBAL_BAR_ON $GLOBAL_BAR_OFF $VALUE
+	elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
+		VALUE=$(sensors | grep -E "^(Tctl)" | awk '{print $2}') > $LCD
+		echo $VALUE  > $LCD
+#		pgbar $X_BAR Y_VAL $BAR_SIZE $GLOBAL_BAR_ON $GLOBAL_BAR_OFF $VALUE
+	fi
+}
+function gputemp() {
+	X_VAL=4
+	Y_VAL=2
+	X_BAR=11
+	BAR_SIZE=8
+	gotoxy $X_VAL $Y_VAL
+	if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
+		VALUE=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
+		echo $VALUE  > $LCD
+#		pgbar $X_BAR Y_VAL $BAR_SIZE $GLOBAL_BAR_ON $GLOBAL_BAR_OFF $VALUE
+	elif [[ $(sensors | grep -E "^(edge)") ]]; then
+		VALUE=$(sensors | grep -E "^(edge)" | awk '{print $2}') > $LCD
+		echo $VALUE  > $LCD
+#		pgbar $X_BAR Y_VAL $BAR_SIZE $GLOBAL_BAR_ON $GLOBAL_BAR_OFF $VALUE
+	fi
+}
+function cpufan() {
+	if   [[ $(sensors | grep -E "^(fan1)") ]]; then
+		sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}'  > $LCD
+	fi
+}
+function gpufan() {
+	if   [[ $(sensors | grep -E "^(fan1)") ]]; then
+		sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}'  > $LCD
+	fi
+}
+function disk() {
+	df -h | grep -E "/home" | awk 
 }
 function uptime() {
 	uptime -s | awk "{print $2}" > $LCD
@@ -49,9 +113,14 @@ function loop() {
 		./lcd clear
 		./lcd printxy 0 0 "CPU"
 		./lcd printxy 0 1 "RAM"
+		./lcd printxy 0 2 "GPU"
+		./lcd printxy 0 3 "GPU"
+		#~ ./lcd printxy 8 2 "RPM"
 		while [[ 1 ]]; do
-			./lcd xy 4 0 temp
+			./lcd cputemp
 			./lcd xy 4 1 ram100
+			./lcd xy 4 2 gputemp
+			./lcd xy 4 3 gpufan
 			sleep $1
 		done
 	else
@@ -74,10 +143,14 @@ if [[ -e $LCD ]]; then
 		;;
 		xy)
 			gotoxy $2 $3
-			if [[ $4 == "temp" ]]; then
+			if   [[ $4 == "temp" ]]; then
 				temp
 			elif [[ $4 == "ram100" ]]; then
 				ram100
+			elif [[ $4 == "gputemp" ]]; then
+				gputemp
+			elif [[ $4 == "gpufan" ]]; then
+				gpufan
 			fi
 		;;
 		print)
@@ -86,8 +159,8 @@ if [[ -e $LCD ]]; then
 		printxy)
 		  printxy $2 $3 $4
 		;;
-		temp)
-			temp
+		cputemp)
+			cputemp
 		;;
 		cursoroff)
 			cursoroff
@@ -103,6 +176,9 @@ if [[ -e $LCD ]]; then
 		;;
 		loop)
 		  loop $2
+		;;
+		pgbar)
+		  pgbar $1 $2 $3 $4 $5 $6
 		;;
 	esac
 else

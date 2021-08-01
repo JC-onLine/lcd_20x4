@@ -1,6 +1,11 @@
 #!/usr/bin/zsh
 LCD=/dev/ttyUSB0
 
+# ========================================
+# Usage: ./lcd loop 2   #for 2 seconds
+# ========================================
+
+
 # ==== LOW LEVEL FUNCTIONS ====
 function init() {
 	echo "\xA0" > $LCD
@@ -62,40 +67,9 @@ function format() {
 	VALUE=$1	# numeric value in int or float
 	TYPE=$2		# example: int or float
 	FORMAT=$3	# example: "%6.1f" used by printf
-	RANGE=$4	# example: 999 or 9999
-	UNIT=$5		# example: C, %, RM ...
-	#~ BLANK=" "
-	#~ VALUE_INT=$(printf "%.0f" $VALUE)
-	# formating:
-	#~ if   [ $RANGE -eq 999 ]; then
-		#~ if   [ $VALUE_INT -lt 10 ]; then
-			#~ SPACE=$(echo $BLANK $BLANK)
-		#~ elif [ $VALUE_INT -lt 100 ]; then
-			#~ SPACE=$(echo $BLANK)
-		#~ else
-			#~ SPACE=""
-		#~ fi
-	#~ elif   [ $RANGE -eq 9999 ]; then
-		#~ if   [ $VALUE_INT -lt 10 ]; then
-			#~ SPACE=$echo($BLANK $BLANK $BLANK )
-		#~ elif [ $VALUE_INT -lt 100 ]; then
-			#~ SPACE=$($BLANK $BLANK)
-		#~ elif [ $VALUE_INT -lt 1000 ]; then
-			#~ SPACE=$(echo$BLANK)
-		#~ else
-			#~ SPACE=""
-		#~ fi
-	#~ else
-		#~ SPACE=""
-	#~ fi
-	#~ if [ $TYPE = "int" ]; then
-		#~ VALUE_DISPLAY=$(printf "%s%.0f%s" $SPACE $VALUE $UNIT)
-	#~ elif [ $TYPE = "float" ]; then
-	
-		#~ VALUE_DISPLAY=$(IFS=$'\n'; printf "%s$FORMAT%s" $SPACE $VALUE $UNIT)
-		VALUE_DISPLAY=$(IFS=$'\n'; printf "$FORMAT%s" $SPACE $VALUE $UNIT)
-		VALUE_DISPLAY=$(echo $VALUE_DISPLAY | tr "," ".")
-	#~ fi
+	UNIT=$4		# example: C, %, RM ...
+	VALUE_DISPLAY=$(IFS=$'\n'; printf "$FORMAT%s" $SPACE $VALUE $UNIT)
+	VALUE_DISPLAY=$(echo $VALUE_DISPLAY | tr "," ".")
 	echo $VALUE_DISPLAY
 	IFS=$'\t\n'
 }
@@ -152,10 +126,9 @@ function cputemp() {
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
 	VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-	VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "999" "C")
+	VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "C")
 	# display
 	printxy $X_VAL $Y_VAL $VALUE_DISPLAY
-	#~ echo $VALUE_FLOAT "-" $VALUE_INT "-" $VALUE_DISPLAY
 	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function ram100() {
@@ -168,10 +141,11 @@ function ram100() {
 	# Percent RAM calcul
 	VALUE_STR=$(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "%")
-	#~ VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
+	VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "%")
 	# Display RAM & progressbar
-	printxy $X_VAL $Y_VAL $VALUE_STR
+	printxy $X_VAL $Y_VAL $VALUE_DISPLAY
 	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function gputemp() {
@@ -181,14 +155,19 @@ function gputemp() {
 	BAR_SIZE=8
 	MINI=0
 	MAXI=100
+	# read sensors
 	if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
 		VALUE_STR=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
 	elif [[ $(sensors | grep -E "^(edge)") ]]; then
 		VALUE_STR=$(sensors | grep -E "^(edge)" | awk '{print $2}')
 	fi
-	printxy $X_VAL $Y_VAL $VALUE_STR
+	# formating
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
+	VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "%")
+	# Display RAM & progressbar
+	printxy $X_VAL $Y_VAL $VALUE_DISPLAY
 	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function cpufan() {
@@ -203,14 +182,18 @@ function gpufan() {
 	BAR_SIZE=8
 	MINI=0
 	MAXI=3200
+	# read sensors
 	if   [[ $(sensors | grep -E "^(fan1)") ]]; then
 		VALUE_STR=$(sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}')
 	else
 		VALUE_STR="N/A"
 	fi
-	printxy $X_VAL $Y_VAL $VALUE_STR
+	# formating
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RM")
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%4.0f" "RM")
+	# Display RAM & progressbar
+	printxy $X_VAL $Y_VAL $VALUE_DISPLAY
 	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function disk() {

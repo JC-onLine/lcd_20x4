@@ -39,17 +39,24 @@ function ascii() {
 	cursoron
 	echo "\x$1" > $LCD
 }
-function font7() {
+function font() {
 	init
 	cursoron
-	echo "\xA4\x07\x00\x15\x00\x00\x00\x15\x00\x00" > $LCD
-	print 7
-}
-function font8() {
-	init
-	cursoron
-	echo "\xA4\x08\x00\x1F\x1F\x1F\x1F\x1F\x00\x00" > $LCD
-	print 8
+	case $1 in
+		5)
+			echo "\xA4\x05\x00\x15\x00\x10\x00\x15\x00\x00" > $LCD
+		;;
+		6)
+			echo "\xA4\x06\x00\x15\x00\x01\x00\x15\x00\x00" > $LCD
+		;;
+		7)
+			echo "\xA4\x07\x00\x15\x00\x00\x00\x15\x00\x00" > $LCD
+		;;
+		8)
+			echo "\xA4\x08\x00\x1F\x1F\x1F\x1F\x1F\x00\x00" > $LCD
+		;;
+	esac
+	print $1
 }
 
 
@@ -63,12 +70,12 @@ function progressbar() {
 	MAXI=$6  # param6: Maxi value.
 	BAR_ON="8"
 	BAR_OFF="7"
-	#~ echo "progressbar: " $1 $2 $3 $4 $5 $6
+	BAR_END="6"
+	BAR_BEGIN="5"
 	# Scale calcul
 	RANGE=$(($MAXI - $MINI))
 	SCALE=$(( ($BAR_L * ($MAXI - $VALUE)) / $RANGE ))
 	CAR_NB=$(( $BAR_L - SCALE - 1 ))
-	#~ echo "progressbar: SCALE=" $SCALE " CAR_NB=" $CAR_NB
 	# Progressbar trace
 	gotoxy $BAR_X $BAR_Y
 	for (( i=1; i<=$BAR_L; i++ )); do
@@ -77,7 +84,13 @@ function progressbar() {
 			BAR="$BAR_ON"
 		# Inactive trace
 		else
-			BAR="$BAR_OFF"
+			if [ $i -eq 1 ] && [ $CAR_NB -le 0 ]; then
+				BAR="$BAR_BEGIN"
+			elif [ $i -ne $BAR_L ]; then
+				BAR="$BAR_OFF"
+			else
+				BAR="$BAR_END"
+			fi
 		fi
 		print $BAR
 	done	
@@ -149,7 +162,7 @@ function gpufan() {
 		VALUE_STR="N/A"
 	fi
 	printxy $X_VAL $Y_VAL $VALUE_STR
-	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RPM")
+	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RM")
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
 	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
@@ -224,11 +237,8 @@ if [[ -e $LCD ]]; then
 		ascii)
 			ascii $2
 		;;
-		font7)
-			font7 $2
-		;;
-		font8)
-			font8 $2
+		font)
+			font $2
 		;;
 		uptime)
 		  uptime
@@ -245,8 +255,8 @@ if [[ -e $LCD ]]; then
 		gpufan)
 			gpufan $2 $3
 		;;
-		pgbar)
-		  progressbar $1 $2 $3 $4 $5 $6
+		progressbar)
+		  progressbar $2 $3 $4 $5 $6 $7
 		;;
 		loop)
 		  loop $2

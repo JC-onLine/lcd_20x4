@@ -58,13 +58,50 @@ function font() {
 	esac
 	print $1
 }
-
+function format() {
+	VALUE=$1	# numeric value in int or float
+	TYPE=$2		# example: int or float
+	FORMAT=$3	# example: "%.1f" used by printf
+	RANGE=$4	# example: 999 or 9999
+	UNIT=$5		# example: C, %, RM ...
+	BLANK=" "
+	VALUE_INT=$(printf "%.0f" $VALUE)
+	# formating:
+	if   [ $RANGE -eq 999 ]; then
+		if   [ $VALUE_INT -lt 10 ]; then
+			SPACE=$(echo $BLANK $BLANK)
+		elif [ $VALUE_INT -lt 100 ]; then
+			SPACE=$(echo $BLANK)
+		else
+			SPACE=""
+		fi
+	elif   [ $RANGE -eq 9999 ]; then
+		if   [ $VALUE_INT -lt 10 ]; then
+			SPACE=$echo($BLANK $BLANK $BLANK )
+		elif [ $VALUE_INT -lt 100 ]; then
+			SPACE=$($BLANK $BLANK)
+		elif [ $VALUE_INT -lt 1000 ]; then
+			SPACE=$(echo$BLANK)
+		else
+			SPACE=""
+		fi
+	else
+		SPACE=""
+	fi
+	if [ $TYPE = "int" ]; then
+		VALUE_DISPLAY=$(printf "%s%.0f%s" $SPACE $VALUE $UNIT)
+	elif [ $TYPE = "float" ]; then
+		VALUE_DISPLAY=$(printf "%s$FORMAT%s" $SPACE $VALUE $UNIT)
+		VALUE_DISPLAY=$(echo $VALUE_DISPLAY | tr "," ".")
+	fi
+	echo $VALUE_DISPLAY
+}
 
 # ==== HIGH LEVEL FUNCTIONS ====
 function progressbar() {
 	BAR_X=$1 # param1: X display position.
 	BAR_Y=$2 # param2: Y display position.
-	BAR_L=$3 # param3: bar length in caracters.
+	BAR_L=$3 # param3: progressbar length in caracters.
 	VALUE=$4 # param4: Value.
 	MINI=$5  # param5: Mini value.
 	MAXI=$6  # param6: Maxi value.
@@ -102,14 +139,24 @@ function cputemp() {
 	BAR_SIZE=8
 	MINI=0
 	MAXI=100
-	if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
+	if [[ $(sensors | grep -E "^(Core 0)") ]]; then
 		VALUE_STR=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
 	elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
-		VALUE_STR=$(sensors | grep -E "^(Tctl)" | awk '{print $2}')
+		VALUE_STR=$(sensors | grep -E "^(Tctl)" | awk '{print $2}' | tr -d "+C")
 	fi
-	printxy $X_VAL $Y_VAL $VALUE_STR
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
+	VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	#~ if [[ VALUE_INT -lt 100 ]]; then
+		#~ SPACE=" "
+	#~ else
+		#~ SPACE=""
+	#~ fi
+	#~ VALUE_DISPLAY=$(printf "%s%.1fC" $SPACE $VALUE_FLOAT)
+	#~ VALUE_DISPLAY=$(echo $VALUE_DISPLAY | tr "," ".")
+	VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%.1f" "999" "C")
+	printxy $X_VAL $Y_VAL $VALUE_DISPLAY
+	#~ echo $VALUE_FLOAT "-" $VALUE_INT "-" $VALUE_DISPLAY
 	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function ram100() {

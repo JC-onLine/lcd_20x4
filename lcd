@@ -34,6 +34,24 @@ function cursoron() {
 function cursoroff() {
 	echo "\xA3\x0C" > $LCD
 }
+function ascii() {
+	init
+	cursoron
+	echo "\x$1" > $LCD
+}
+function font7() {
+	init
+	cursoron
+	echo "\xA4\x07\x00\x15\x00\x00\x00\x15\x00\x00" > $LCD
+	print 7
+}
+function font8() {
+	init
+	cursoron
+	echo "\xA4\x08\x00\x1F\x1F\x1F\x1F\x1F\x00\x00" > $LCD
+	print 8
+}
+
 
 # ==== HIGH LEVEL FUNCTIONS ====
 function progressbar() {
@@ -43,8 +61,8 @@ function progressbar() {
 	VALUE=$4 # param4: Value.
 	MINI=$5  # param5: Mini value.
 	MAXI=$6  # param6: Maxi value.
-	BAR_ON="="
-	BAR_OFF="\e-"
+	BAR_ON="8"
+	BAR_OFF="7"
 	#~ echo "progressbar: " $1 $2 $3 $4 $5 $6
 	# Scale calcul
 	RANGE=$(($MAXI - $MINI))
@@ -79,7 +97,7 @@ function cputemp() {
 	printxy $X_VAL $Y_VAL $VALUE_STR
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-	#~ progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
+	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function ram100() {
 	X_VAL=$1
@@ -94,7 +112,7 @@ function ram100() {
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
 	# Display RAM & progressbar
 	printxy $X_VAL $Y_VAL $VALUE_STR
-	#~ progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
+	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function gputemp() {
 	X_VAL=$1
@@ -111,7 +129,7 @@ function gputemp() {
 	printxy $X_VAL $Y_VAL $VALUE_STR
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
 	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-	#~ progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
+	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function cpufan() {
 	if   [[ $(sensors | grep -E "^(fan1)") ]]; then
@@ -124,16 +142,16 @@ function gpufan() {
 	X_BAR=C
 	BAR_SIZE=8
 	MINI=0
-	MAXI=100
+	MAXI=3200
 	if   [[ $(sensors | grep -E "^(fan1)") ]]; then
 		VALUE_STR=$(sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}')
 	else
 		VALUE_STR="N/A"
 	fi
 	printxy $X_VAL $Y_VAL $VALUE_STR
-	#~ VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
-	#~ VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-	#~ progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
+	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RPM")
+	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function disk() {
 	df -h | grep -E "/home" | awk 
@@ -141,9 +159,6 @@ function disk() {
 function uptime() {
 	uptime -s | awk "{print $2}" > $LCD
 	# uptime -s > $LCD
-}
-function degre() {
-	echo "\xDF" > $LCD
 }
 function loop() {
 	if [[ $1 =~ [0-9]+ ]]; then
@@ -205,6 +220,15 @@ if [[ -e $LCD ]]; then
 		;;
 		cursoron)
 			cursoron
+		;;
+		ascii)
+			ascii $2
+		;;
+		font7)
+			font7 $2
+		;;
+		font8)
+			font8 $2
 		;;
 		uptime)
 		  uptime

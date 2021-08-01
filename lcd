@@ -1,19 +1,23 @@
 #!/usr/bin/zsh
 LCD=/dev/ttyUSB0
-GLOBAL_BAR_ON="="
-GLOBAL_BAR_OFF="-"
 
+# ==== LOW LEVEL FUNCTIONS ====
 function init() {
 	echo "\xA0" > $LCD
+	sleep 0.5
+}
+function clear() {
+	echo "\xA3\x01" > $LCD
 }
 function gotoxy() {
 	echo "\xA1\x$1\x$2" > $LCD
 }
-#function print() {
-#	echo $1 > $LCD
-#}
+function print() {
+	echo "\xA2\x$1\x00" > $LCD
+}
 function printxy() {
 	echo "\xA1\x$1\x$2" > $LCD
+	#~ print $3
 	echo $3 > $LCD
 }
 function lcdon() {
@@ -24,60 +28,90 @@ function lcdoff() {
 	echo "\xA5\x02" > $LCD
 	echo "Display off"
 }
-function pgbar() {
-	# param1: X display position.
-	# param2: Y display position.
-	# param3: bar lengt in caracters.
-	# param4: Value in %.
-	X=$1
-	Y=$2
-	BAR_SIZE=$3
-	BAR_ON=$4
-	BAR_OFF=$5
-	VALUE=$6
-	gotoxy $X $Y
-	SCALE=$((($BAR_SIZE * $VALUE) / 100))
-	echo "Result: " $SCALE
-	for (( i=1; i<=$BAR_SIZE; i++ )); do
-		if [ $i -le $SCALE ]; then
-			echo -ne $BAR_ON > $LCD
+function cursoron() {
+	echo "\xA3\x0E" > $LCD
+}
+function cursoroff() {
+	echo "\xA3\x0C" > $LCD
+}
+
+# ==== HIGH LEVEL FUNCTIONS ====
+function progressbar() {
+	BAR_X=$1 # param1: X display position.
+	BAR_Y=$2 # param2: Y display position.
+	BAR_L=$3 # param3: bar length in caracters.
+	VALUE=$4 # param4: Value.
+	MINI=$5  # param5: Mini value.
+	MAXI=$6  # param6: Maxi value.
+	BAR_ON="="
+	BAR_OFF="\e-"
+	#~ echo "progressbar: " $1 $2 $3 $4 $5 $6
+	# Scale calcul
+	RANGE=$(($MAXI - $MINI))
+	SCALE=$(( ($BAR_L * ($MAXI - $VALUE)) / $RANGE ))
+	CAR_NB=$(( $BAR_L - SCALE - 1 ))
+	#~ echo "progressbar: SCALE=" $SCALE " CAR_NB=" $CAR_NB
+	# Progressbar trace
+	gotoxy $BAR_X $BAR_Y
+	for (( i=1; i<=$BAR_L; i++ )); do
+		# Active trace
+		if [ $i -le $CAR_NB ]; then
+			BAR="$BAR_ON"
+		# Inactive trace
 		else
-			echo -ne $BAR_OFF > $LCD
+			BAR="$BAR_OFF"
 		fi
+		print $BAR
 	done	
-	#echo "" > $LCD
 }
 function cputemp() {
-	X_VAL=4
-	Y_VAL=0
-	X_BAR=11
+	X_VAL=$1
+	Y_VAL=$2
+	X_BAR=C
 	BAR_SIZE=8
-	gotoxy $X_VAL $Y_VAL
+	MINI=0
+	MAXI=100
 	if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
-		VALUE=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
-		echo $VALUE  > $LCD
-#		pgbar $X_BAR Y_VAL $BAR_SIZE $GLOBAL_BAR_ON $GLOBAL_BAR_OFF $VALUE
+		VALUE_STR=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
 	elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
-		VALUE=$(sensors | grep -E "^(Tctl)" | awk '{print $2}') > $LCD
-		echo $VALUE  > $LCD
-#		pgbar $X_BAR Y_VAL $BAR_SIZE $GLOBAL_BAR_ON $GLOBAL_BAR_OFF $VALUE
+		VALUE_STR=$(sensors | grep -E "^(Tctl)" | awk '{print $2}')
 	fi
+	printxy $X_VAL $Y_VAL $VALUE_STR
+	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
+	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	#~ progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
+}
+function ram100() {
+	X_VAL=$1
+	Y_VAL=$2
+	X_BAR=C
+	BAR_SIZE=8
+	MINI=0
+	MAXI=100
+	# Percent RAM calcul
+	VALUE_STR=$(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
+	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "%")
+	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	# Display RAM & progressbar
+	printxy $X_VAL $Y_VAL $VALUE_STR
+	#~ progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function gputemp() {
-	X_VAL=4
-	Y_VAL=2
-	X_BAR=11
+	X_VAL=$1
+	Y_VAL=$2
+	X_BAR=C
 	BAR_SIZE=8
-	gotoxy $X_VAL $Y_VAL
+	MINI=0
+	MAXI=100
 	if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
-		VALUE=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
-		echo $VALUE  > $LCD
-#		pgbar $X_BAR Y_VAL $BAR_SIZE $GLOBAL_BAR_ON $GLOBAL_BAR_OFF $VALUE
+		VALUE_STR=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
 	elif [[ $(sensors | grep -E "^(edge)") ]]; then
-		VALUE=$(sensors | grep -E "^(edge)" | awk '{print $2}') > $LCD
-		echo $VALUE  > $LCD
-#		pgbar $X_BAR Y_VAL $BAR_SIZE $GLOBAL_BAR_ON $GLOBAL_BAR_OFF $VALUE
+		VALUE_STR=$(sensors | grep -E "^(edge)" | awk '{print $2}')
 	fi
+	printxy $X_VAL $Y_VAL $VALUE_STR
+	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
+	VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	#~ progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function cpufan() {
 	if   [[ $(sensors | grep -E "^(fan1)") ]]; then
@@ -85,9 +119,21 @@ function cpufan() {
 	fi
 }
 function gpufan() {
+	X_VAL=$1
+	Y_VAL=$2
+	X_BAR=C
+	BAR_SIZE=8
+	MINI=0
+	MAXI=100
 	if   [[ $(sensors | grep -E "^(fan1)") ]]; then
-		sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}'  > $LCD
+		VALUE_STR=$(sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}')
+	else
+		VALUE_STR="N/A"
 	fi
+	printxy $X_VAL $Y_VAL $VALUE_STR
+	#~ VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
+	#~ VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
+	#~ progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function disk() {
 	df -h | grep -E "/home" | awk 
@@ -96,31 +142,22 @@ function uptime() {
 	uptime -s | awk "{print $2}" > $LCD
 	# uptime -s > $LCD
 }
-function cursoron() {
-	echo "\xA3\x0E" > $LCD
-}
-function cursoroff() {
-	echo "\xA3\x0C" > $LCD
-}
 function degre() {
 	echo "\xDF" > $LCD
 }
-function ram100() {
-	free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}' > $LCD
-}
 function loop() {
 	if [[ $1 =~ [0-9]+ ]]; then
+		./lcd init
 		./lcd clear
 		./lcd printxy 0 0 "CPU"
 		./lcd printxy 0 1 "RAM"
 		./lcd printxy 0 2 "GPU"
 		./lcd printxy 0 3 "GPU"
-		#~ ./lcd printxy 8 2 "RPM"
 		while [[ 1 ]]; do
-			./lcd cputemp
-			./lcd xy 4 1 ram100
-			./lcd xy 4 2 gputemp
-			./lcd xy 4 3 gpufan
+			./lcd cputemp 4 0	# X Y position in LCD display
+			./lcd ram100 4 1
+			./lcd gputemp 4 2
+			./lcd gpufan 4 3
 			sleep $1
 		done
 	else
@@ -137,20 +174,24 @@ if [[ -e $LCD ]]; then
 		on)
 			lcdon
 		;;
-		cls | clear)
+		init)
 			init
+			cursoroff
+		;;
+		cls | clear)
+			clear
 			cursoroff
 		;;
 		xy)
 			gotoxy $2 $3
-			if   [[ $4 == "temp" ]]; then
-				temp
+			if   [[ $4 == "cputemp" ]]; then
+				cputemp $4 $5
 			elif [[ $4 == "ram100" ]]; then
-				ram100
+				ram100 $4 $5
 			elif [[ $4 == "gputemp" ]]; then
-				gputemp
+				gputemp $4 $5
 			elif [[ $4 == "gpufan" ]]; then
-				gpufan
+				gpufan $4 $5
 			fi
 		;;
 		print)
@@ -158,9 +199,6 @@ if [[ -e $LCD ]]; then
 		;;
 		printxy)
 		  printxy $2 $3 $4
-		;;
-		cputemp)
-			cputemp
 		;;
 		cursoroff)
 			cursoroff
@@ -171,14 +209,23 @@ if [[ -e $LCD ]]; then
 		uptime)
 		  uptime
 		;;
+		cputemp)
+			cputemp $2 $3
+		;;
 		ram100)
-			ram100
+			ram100 $2 $3
+		;;
+		gputemp)
+			gputemp $2 $3
+		;;
+		gpufan)
+			gpufan $2 $3
+		;;
+		pgbar)
+		  progressbar $1 $2 $3 $4 $5 $6
 		;;
 		loop)
 		  loop $2
-		;;
-		pgbar)
-		  pgbar $1 $2 $3 $4 $5 $6
 		;;
 	esac
 else

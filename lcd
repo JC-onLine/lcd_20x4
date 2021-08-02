@@ -117,10 +117,10 @@ function cputemp() {
 	MINI=0
 	MAXI=100
 	# read sensors
-	if [[ $(sensors | grep -E "^(Core 0)") ]]; then
-		VALUE_STR=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
+	if [[ $(sensors | grep -E "^(temp1:)") ]]; then	
+		VALUE_STR=$(sensors | grep -E "^(temp1:)" | awk '{print $2}' | tr -d "+°CN/A")
 	elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
-		VALUE_STR=$(sensors | grep -E "^(Tctl)" | awk '{print $2}' | tr -d "+C")
+		VALUE_STR=$(sensors | grep -E "^(Tctl)"   | awk '{print $2}' | tr -d "+°C")
 	fi
 	# formating
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
@@ -186,7 +186,7 @@ function gpufan() {
 	if   [[ $(sensors | grep -E "^(fan1)") ]]; then
 		VALUE_STR=$(sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}')
 	else
-		VALUE_STR="N/A"
+		VALUE_STR="0"
 	fi
 	# formating
 	VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RM")

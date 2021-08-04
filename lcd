@@ -61,7 +61,7 @@ function font() {
 			echo "\xA4\x08\x00\x1F\x1F\x1F\x1F\x1F\x00\x00" > $LCD
 		;;
 	esac
-	print $1
+	#~ print $1
 }
 function format() {
 	VALUE=$1	# numeric value in int or float
@@ -206,11 +206,17 @@ function uptime() {
 function loop() {
 	if [[ $1 =~ [0-9]+ ]]; then
 		./lcd init
+		# Lad custom font
+		for (( i=5; i<=8; i++ )); do
+			./lcd font $i
+		done
+		# labels lcd display
 		./lcd clear
 		./lcd printxy 0 0 "CPU"
 		./lcd printxy 0 1 "RAM"
 		./lcd printxy 0 2 "GPU"
 		./lcd printxy 0 3 "GPU"
+		# get sensors and display to lcd
 		while [[ 1 ]]; do
 			./lcd cputemp 4 0	# X Y position in LCD display
 			./lcd ram100 4 1

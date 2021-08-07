@@ -1,4 +1,4 @@
-#!/usr/bin/zsh
+#!/bin/sh
 
 # USB serial port for LCD display
 LCD=/dev/ttyUSB0

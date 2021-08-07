@@ -1,4 +1,6 @@
 #!/usr/bin/zsh
+
+# USB serial port for LCD display
 LCD=/dev/ttyUSB0
 
 # ======================================================
@@ -18,7 +20,7 @@ function gotoxy() {
 	printf "\xA1\x$1\x$2" > $LCD
 }
 function print() {
-	printf "\xA2\x%s\x00" $1 > $LCD
+	printf "\xA2\x$1\x00" > $LCD
 }
 function printxy() {
 	printf "\xA1\x$1\x$2" > $LCD
@@ -45,7 +47,6 @@ function ascii() {
 	printf "\x$1" > $LCD
 }
 function font() {
-	./lcd init
 	# Define custom font for progressbar
 	case $1 in
 		5)
@@ -62,9 +63,6 @@ function font() {
 		;;
 	esac
 	#~ print $1
-	#~ printf "\x0%s" $1 > $LCD
-	#~ echo "\x$1" > $LCD
-	echo "\xA2\x$1\x00" > $LCD
 }
 function format() {
 	VALUE=$1	# numeric value in int or float
@@ -109,9 +107,9 @@ function progressbar() {
 				BAR="$BAR_END"
 			fi
 		fi
-		#~ printf "\x%s" $BAR > $LCD
-		#~ print $BAR
-		echo "\xA2\x$BAR\x00" > $LCD
+		#~ printf "\xA2\x%d\x00" $BAR > $LCD
+		print $BAR
+		#~ echo "\xA2\x$BAR\x00" > $LCD
 	done	
 }
 function cputemp() {
@@ -211,10 +209,10 @@ function uptime() {
 function loop() {
 	if [[ $1 =~ [0-9]+ ]]; then
 		./lcd init
-		./lcd printxy 3 1 "Fonts init"
+		./lcd printxy 1 1 "Fonts-loading"
 		for (( i=5; i<=8; i++ )); do
 			./lcd font $i
-			./lcd print "."
+			./lcd print "2E"
 			sleep 0.2
 		done
 		sleep 1

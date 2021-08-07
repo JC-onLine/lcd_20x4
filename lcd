@@ -1,67 +1,70 @@
 #!/usr/bin/zsh
 LCD=/dev/ttyUSB0
 
-# ========================================
-# Usage: ./lcd loop 2   #for 2 seconds
-# ========================================
+# ======================================================
+# Usage: ./lcd loop 2   #for monitoring every 2 seconds
+# ======================================================
 
 
 # ==== LOW LEVEL FUNCTIONS ====
 function init() {
-	echo "\xA0" > $LCD
+	printf "\xA0" > $LCD
 	sleep 0.5
 }
 function clear() {
-	echo "\xA3\x01" > $LCD
+	printf "\xA3\x01" > $LCD
 }
 function gotoxy() {
-	echo "\xA1\x$1\x$2" > $LCD
+	printf "\xA1\x$1\x$2" > $LCD
 }
 function print() {
-	echo "\xA2\x$1\x00" > $LCD
+	printf "\xA2\x%s\x00" $1 > $LCD
 }
 function printxy() {
-	echo "\xA1\x$1\x$2" > $LCD
+	printf "\xA1\x$1\x$2" > $LCD
 	#~ print $3
-	echo $3 > $LCD
+	printf "%s" $3 > $LCD
 }
 function lcdon() {
-	echo "\xA5\x01" > $LCD
-	echo "Display on"
+	printf "\xA5\x01" > $LCD
+	printf "Display on"
 }
 function lcdoff() {
-	echo "\xA5\x02" > $LCD
-	echo "Display off"
+	printf "\xA5\x02" > $LCD
+	printf "Display off"
 }
 function cursoron() {
-	echo "\xA3\x0E" > $LCD
+	printf "\xA3\x0E" > $LCD
 }
 function cursoroff() {
-	echo "\xA3\x0C" > $LCD
+	printf "\xA3\x0C" > $LCD
 }
 function ascii() {
 	init
 	cursoron
-	echo "\x$1" > $LCD
+	printf "\x$1" > $LCD
 }
 function font() {
-	init
-	cursoron
+	./lcd init
+	# Define custom font for progressbar
 	case $1 in
 		5)
-			echo "\xA4\x05\x00\x15\x00\x10\x00\x15\x00\x00" > $LCD
+			printf "\xA4\x05\x00\x15\x00\x10\x00\x15\x00\x00" > $LCD
 		;;
 		6)
-			echo "\xA4\x06\x00\x15\x00\x01\x00\x15\x00\x00" > $LCD
+			printf "\xA4\x06\x00\x15\x00\x01\x00\x15\x00\x00" > $LCD
 		;;
 		7)
-			echo "\xA4\x07\x00\x15\x00\x00\x00\x15\x00\x00" > $LCD
+			printf "\xA4\x07\x00\x15\x00\x00\x00\x15\x00\x00" > $LCD
 		;;
 		8)
-			echo "\xA4\x08\x00\x1F\x1F\x1F\x1F\x1F\x00\x00" > $LCD
+			printf "\xA4\x08\x00\x1F\x1F\x1F\x1F\x1F\x00\x00" > $LCD
 		;;
 	esac
 	#~ print $1
+	#~ printf "\x0%s" $1 > $LCD
+	#~ echo "\x$1" > $LCD
+	echo "\xA2\x$1\x00" > $LCD
 }
 function format() {
 	VALUE=$1	# numeric value in int or float
@@ -70,8 +73,8 @@ function format() {
 	UNIT=$4		# example: C, %, RM ...
 	VALUE_DISPLAY=$(IFS=$'\n'; printf "$FORMAT%s" $SPACE $VALUE $UNIT)
 	VALUE_DISPLAY=$(echo $VALUE_DISPLAY | tr "," ".")
-	echo $VALUE_DISPLAY
 	IFS=$'\t\n'
+	echo $VALUE_DISPLAY
 }
 
 # ==== HIGH LEVEL FUNCTIONS ====
@@ -106,7 +109,9 @@ function progressbar() {
 				BAR="$BAR_END"
 			fi
 		fi
-		print $BAR
+		#~ printf "\x%s" $BAR > $LCD
+		#~ print $BAR
+		echo "\xA2\x$BAR\x00" > $LCD
 	done	
 }
 function cputemp() {
@@ -206,11 +211,14 @@ function uptime() {
 function loop() {
 	if [[ $1 =~ [0-9]+ ]]; then
 		./lcd init
-		# Lad custom font
+		./lcd printxy 3 1 "Fonts init"
 		for (( i=5; i<=8; i++ )); do
 			./lcd font $i
+			./lcd print "."
+			sleep 0.2
 		done
-		# labels lcd display
+		sleep 1
+		# lcd labels display
 		./lcd clear
 		./lcd printxy 0 0 "CPU"
 		./lcd printxy 0 1 "RAM"
@@ -225,7 +233,7 @@ function loop() {
 			sleep $1
 		done
 	else
-		echo "Utilisation : lcd loop [frequency in second]"
+		echo "Utilisation: lcd loop [frequency in second]"
   fi
 }
 

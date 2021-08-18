@@ -121,8 +121,8 @@ function cputemp() {
     Y_VAL=$2
     X_BAR=C
     BAR_SIZE=8
-    MINI=0
-    MAXI=100
+    MINI=30
+    MAXI=80
     # read sensors
     #~ if [[ $(sensors | grep -E "^(temp1:)") ]]; then    
         #~ VALUE_STR=$(sensors | grep -E "^(temp1:)" | awk '{print $2}' | tr -d "+°CN/A")

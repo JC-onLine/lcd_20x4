@@ -2,6 +2,7 @@
 
 # USB serial port for LCD display
 LCD=/dev/ttyUSB0
+SENSORS_JSON=$(sensors -j)
 
 # ======================================================
 # Usage: ./lcd loop 2   #for monitoring every 2 seconds
@@ -73,6 +74,10 @@ function format() {
     IFS=$'\t\n'
     echo $VALUE_DISPLAY
 }
+function get_sensors_json() {
+    $SENSORS_JSON=$(sensors -j)
+}
+
 
 # ==== HIGH LEVEL FUNCTIONS ====
 function progressbar() {
@@ -119,14 +124,14 @@ function cputemp() {
     MINI=0
     MAXI=100
     # read sensors
-    if [[ $(sensors | grep -E "^(temp1:)") ]]; then    
-        VALUE_STR=$(sensors | grep -E "^(temp1:)" | awk '{print $2}' | tr -d "+°CN/A")
-    elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
-        VALUE_STR=$(sensors | grep -E "^(Tctl)"   | awk '{print $2}' | tr -d "+°C")
-    fi
+    #~ if [[ $(sensors | grep -E "^(temp1:)") ]]; then    
+        #~ VALUE_STR=$(sensors | grep -E "^(temp1:)" | awk '{print $2}' | tr -d "+°CN/A")
+    #~ elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
+        #~ VALUE_STR=$(sensors | grep -E "^(Tctl)"   | awk '{print $2}' | tr -d "+°C")
+    #~ fi
+    VALUE_STR=$(echo $SENSORS_JSON | jq '."k10temp-pci-00c3".Tctl.temp1_input')    
     # formating
-    VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
-    VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
+    VALUE_FLOAT=$(echo $VALUE_STR | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
     VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "C")
     # display
@@ -158,11 +163,12 @@ function gputemp() {
     MINI=0
     MAXI=100
     # read sensors
-    if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
-        VALUE_STR=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
-    elif [[ $(sensors | grep -E "^(edge)") ]]; then
-        VALUE_STR=$(sensors | grep -E "^(edge)" | awk '{print $2}')
-    fi
+    #~ if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
+        #~ VALUE_STR=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
+    #~ elif [[ $(sensors | grep -E "^(edge)") ]]; then
+        #~ VALUE_STR=$(sensors | grep -E "^(edge)" | awk '{print $2}')
+    #~ fi
+    VALUE_STR=$(echo $SENSORS_JSON | jq '."amdgpu-pci-0900".edge.temp1_input')    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
@@ -185,11 +191,12 @@ function gpufan() {
     MINI=0
     MAXI=3200
     # read sensors
-    if   [[ $(sensors | grep -E "^(fan1)") ]]; then
-        VALUE_STR=$(sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}')
-    else
-        VALUE_STR="0"
-    fi
+    #~ if   [[ $(sensors | grep -E "^(fan1)") ]]; then
+        #~ VALUE_STR=$(sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}')
+    #~ else
+        #~ VALUE_STR="0"
+    #~ fi
+    VALUE_STR=$(echo $SENSORS_JSON | jq '."amdgpu-pci-0900".fan1.fan1_input')    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RM")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)

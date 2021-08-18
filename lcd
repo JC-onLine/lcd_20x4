@@ -2,7 +2,7 @@
 
 # USB serial port for LCD display
 LCD=/dev/ttyUSB0
-SENSORS_JSON
+SENSORS_JSON=$(sensors -j)
 
 # ======================================================
 # Usage: ./lcd loop 2   #for monitoring every 2 seconds
@@ -75,7 +75,7 @@ function format() {
     echo $VALUE_DISPLAY
 }
 function get_sensors_json() {
-    SENSORS_JSON=$(sensors -j)
+    $SENSORS_JSON=$(sensors -j)
 }
 
 
@@ -124,14 +124,18 @@ function cputemp() {
     MINI=0
     MAXI=100
     # read sensors
-    if [[ $(sensors | grep -E "^(temp1:)") ]]; then    
-        VALUE_STR=$(sensors | grep -E "^(temp1:)" | awk '{print $2}' | tr -d "+°CN/A")
-    elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
-        VALUE_STR=$(sensors | grep -E "^(Tctl)"   | awk '{print $2}' | tr -d "+°C")
-    fi
+    #~ if [[ $(sensors | grep -E "^(temp1:)") ]]; then    
+        #~ VALUE_STR=$(sensors | grep -E "^(temp1:)" | awk '{print $2}' | tr -d "+°CN/A")
+    #~ elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
+        #~ VALUE_STR=$(sensors | grep -E "^(Tctl)"   | awk '{print $2}' | tr -d "+°C")
+    #~ fi
+    
+    echo "cputemp:"
+    echo $SENSORS_JSON
+    VALUE_STR=$(echo $SENSORS_JSON | jq '."k10temp-pci-00c3".Tctl.temp1_input')    
     # formating
-    VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
-    VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
+    #~ VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
+    VALUE_FLOAT=$(echo $VALUE_STR | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
     VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "C")
     # display

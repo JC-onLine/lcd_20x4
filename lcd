@@ -2,6 +2,7 @@
 
 # USB serial port for LCD display
 LCD=/dev/ttyUSB0
+SENSORS_JSON
 
 # ======================================================
 # Usage: ./lcd loop 2   #for monitoring every 2 seconds
@@ -73,6 +74,10 @@ function format() {
     IFS=$'\t\n'
     echo $VALUE_DISPLAY
 }
+function get_sensors_json() {
+    SENSORS_JSON=$(sensors -j)
+}
+
 
 # ==== HIGH LEVEL FUNCTIONS ====
 function progressbar() {

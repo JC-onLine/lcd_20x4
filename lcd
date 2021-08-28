@@ -235,12 +235,10 @@ function loop() {
             get_sensors_json
             # display data line by line on LCD
             # X Y position in LCD display, sensor namespace
-            CPU_TEMP=$(get_jsonvalue '."k10temp-pci-00c3".Tctl.temp1_input')
-            echo "cpu temp: " $CPU_TEMP
-            cputemp 4 0 $CPU_TEMP
+            cputemp 4 0 $(get_jsonvalue '."k10temp-pci-00c3".Tctl.temp1_input')
             ram100  4 1
-            gputemp 4 2 $(echo $SENSORS_JSON | jq '."amdgpu-pci-0900".edge.temp1_input')
-            gpufan  4 3 $(echo $SENSORS_JSON | jq '."amdgpu-pci-0900".fan1.fan1_input')
+            gputemp 4 2 $(get_jsonvalue '."amdgpu-pci-0900".edge.temp1_input')
+            gpufan  4 3 $(get_jsonvalue '."amdgpu-pci-0900".fan1.fan1_input')
             sleep $1
         done
     else

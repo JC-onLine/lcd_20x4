@@ -116,19 +116,16 @@ function progressbar() {
     done    
 }
 function cputemp() {
+    # parameters:
     X_VAL=$1
     Y_VAL=$2
+    SENSOR_NAME=$3
+    # settings:
     X_BAR=C
     BAR_SIZE=8
     MINI=30
     MAXI=80
-    # read sensors
-    #~ if [[ $(sensors | grep -E "^(temp1:)") ]]; then    
-        #~ VALUE_STR=$(sensors | grep -E "^(temp1:)" | awk '{print $2}' | tr -d "+°CN/A")
-    #~ elif [[ $(sensors | grep -E "^(Tctl)") ]]; then
-        #~ VALUE_STR=$(sensors | grep -E "^(Tctl)"   | awk '{print $2}' | tr -d "+°C")
-    #~ fi
-    VALUE_STR=$(echo $SENSORS_JSON | jq '."k10temp-pci-00c3".Tctl.temp1_input')    
+    VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_NAME)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
@@ -138,8 +135,11 @@ function cputemp() {
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function ram100() {
+    # parameters:
     X_VAL=$1
     Y_VAL=$2
+    SENSOR_NAME=$3
+    # settings:
     X_BAR=C
     BAR_SIZE=8
     MINI=0
@@ -155,19 +155,16 @@ function ram100() {
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function gputemp() {
+    # parameters:
     X_VAL=$1
     Y_VAL=$2
+    SENSOR_NAME=$3
+    # settings:
     X_BAR=C
     BAR_SIZE=8
     MINI=0
     MAXI=100
-    # read sensors
-    #~ if   [[ $(sensors | grep -E "^(Core 0)") ]]; then
-        #~ VALUE_STR=$(sensors | grep -E "^(Core 0)" | awk '{print $3}')
-    #~ elif [[ $(sensors | grep -E "^(edge)") ]]; then
-        #~ VALUE_STR=$(sensors | grep -E "^(edge)" | awk '{print $2}')
-    #~ fi
-    VALUE_STR=$(echo $SENSORS_JSON | jq '."amdgpu-pci-0900".edge.temp1_input')    
+    VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_NAME)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
@@ -183,19 +180,16 @@ function cpufan() {
     fi
 }
 function gpufan() {
+    # parameters:
     X_VAL=$1
     Y_VAL=$2
+    SENSOR_NAME=$3
+    # settings:
     X_BAR=C
     BAR_SIZE=8
     MINI=0
     MAXI=3200
-    # read sensors
-    #~ if   [[ $(sensors | grep -E "^(fan1)") ]]; then
-        #~ VALUE_STR=$(sensors | grep -E "^(fan1)" | awk '{print $2 " RM "}')
-    #~ else
-        #~ VALUE_STR="0"
-    #~ fi
-    VALUE_STR=$(echo $SENSORS_JSON | jq '."amdgpu-pci-0900".fan1.fan1_input')    
+    VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_NAME)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RM")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
@@ -232,10 +226,11 @@ function loop() {
             # read sensors
             get_sensors_json
             # display data line by line on LCD
-            cputemp 4 0    # X Y position in LCD display
+            # X Y position in LCD display, sensor namespace
+            cputemp 4 0 '."k10temp-pci-00c3".Tctl.temp1_input'
             ram100 4 1
-            gputemp 4 2
-            gpufan 4 3
+            gputemp 4 2 '."amdgpu-pci-0900".edge.temp1_input'
+            gpufan 4 3 '."amdgpu-pci-0900".fan1.fan1_input'
             sleep $1
         done
     else

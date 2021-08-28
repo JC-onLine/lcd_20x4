@@ -2,7 +2,6 @@
 
 # USB serial port for LCD display
 LCD=/dev/ttyUSB0
-SENSORS_JSON=$(sensors -j)
 
 # ======================================================
 # Usage: ./lcd loop 2   #for monitoring every 2 seconds
@@ -75,7 +74,7 @@ function format() {
     echo $VALUE_DISPLAY
 }
 function get_sensors_json() {
-    $SENSORS_JSON=$(sensors -j)
+    SENSORS_JSON=$(sensors -j)
 }
 
 
@@ -223,17 +222,20 @@ function loop() {
         done
         sleep 1
         # lcd labels display
-        ./lcd clear
-        ./lcd printxy 0 0 "CPU"
-        ./lcd printxy 0 1 "RAM"
-        ./lcd printxy 0 2 "GPU"
-        ./lcd printxy 0 3 "GPU"
+        clear
+        printxy 0 0 "CPU" # X Y position & label
+        printxy 0 1 "RAM"
+        printxy 0 2 "GPU"
+        printxy 0 3 "GPU"
         # get sensors and display to lcd
         while [[ 1 ]]; do
-            ./lcd cputemp 4 0    # X Y position in LCD display
-            ./lcd ram100 4 1
-            ./lcd gputemp 4 2
-            ./lcd gpufan 4 3
+            # read sensors
+            get_sensors_json
+            # display data line by line on LCD
+            cputemp 4 0    # X Y position in LCD display
+            ram100 4 1
+            gputemp 4 2
+            gpufan 4 3
             sleep $1
         done
     else

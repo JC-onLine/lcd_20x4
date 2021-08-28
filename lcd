@@ -87,6 +87,24 @@ function get_jsonvalue() {
 
 
 # ==== HIGH LEVEL FUNCTIONS ====
+function init_app() {
+    # init lcd
+    ./lcd init
+    # load font
+    ./lcd printxy 1 1 "Fonts-loading"
+    for (( i=5; i<=8; i++ )); do
+        ./lcd font $i
+        ./lcd print "2E"
+        sleep 0.2
+    done
+    sleep 1
+    # display static labels 
+    clear
+    printxy 0 0 "CPU" # X Y position & label
+    printxy 0 1 "RAM"
+    printxy 0 2 "GPU"
+    printxy 0 3 "GPU"
+}
 function progressbar() {
     BAR_X=$1 # param1: X display position.
     BAR_Y=$2 # param2: Y display position.
@@ -146,14 +164,14 @@ function ram100() {
     # parameters details:
     X_VAL=$1
     Y_VAL=$2
-    SENSOR_NAME=$3
+    VALUE_STR=$3
     # settings details:
     X_BAR=C
     BAR_SIZE=8
     MINI=0
     MAXI=100
     # Percent RAM calcul
-    VALUE_STR=$(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
+    #~ VALUE_STR=$(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "%")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
@@ -215,28 +233,15 @@ function uptime() {
 }
 function loop() {
     if [[ $1 =~ [0-9]+ ]]; then
-        ./lcd init
-        ./lcd printxy 1 1 "Fonts-loading"
-        for (( i=5; i<=8; i++ )); do
-            ./lcd font $i
-            ./lcd print "2E"
-            sleep 0.2
-        done
-        sleep 1
-        # lcd labels display
-        clear
-        printxy 0 0 "CPU" # X Y position & label
-        printxy 0 1 "RAM"
-        printxy 0 2 "GPU"
-        printxy 0 3 "GPU"
-        # get sensors and display to lcd
+        # init display, load font, print static label
+        init_app
         while [[ 1 ]]; do
             # read sensors
             get_sensors_json
             # display data line by line on LCD
             # X Y position in LCD display, sensor namespace
             cputemp 4 0 $(get_jsonvalue '."k10temp-pci-00c3".Tctl.temp1_input')
-            ram100  4 1
+            ram100  4 1 $(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
             gputemp 4 2 $(get_jsonvalue '."amdgpu-pci-0900".edge.temp1_input')
             gpufan  4 3 $(get_jsonvalue '."amdgpu-pci-0900".fan1.fan1_input')
             sleep $1

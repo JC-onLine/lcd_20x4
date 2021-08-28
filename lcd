@@ -74,7 +74,15 @@ function format() {
     echo $VALUE_DISPLAY
 }
 function get_sensors_json() {
+    # parameters:
     SENSORS_JSON=$(sensors -j)
+}
+function get_jsonvalue() {
+    # parameters details:
+    SENSOR_NAME=$1
+    #~ echo "get_jsonvalue: " $SENSOR_NAME
+    # get value in str format from json sensors
+    echo $(echo $SENSORS_JSON | jq $SENSOR_NAME)
 }
 
 
@@ -116,16 +124,16 @@ function progressbar() {
     done    
 }
 function cputemp() {
-    # parameters:
+    # parameters details:
     X_VAL=$1
     Y_VAL=$2
-    SENSOR_NAME=$3
-    # settings:
+    VALUE_STR=$3
+    # settings details:
     X_BAR=C
     BAR_SIZE=8
     MINI=30
     MAXI=80
-    VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_NAME)    
+    #~ VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_VALUE)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
@@ -135,11 +143,11 @@ function cputemp() {
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function ram100() {
-    # parameters:
+    # parameters details:
     X_VAL=$1
     Y_VAL=$2
     SENSOR_NAME=$3
-    # settings:
+    # settings details:
     X_BAR=C
     BAR_SIZE=8
     MINI=0
@@ -155,16 +163,16 @@ function ram100() {
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function gputemp() {
-    # parameters:
+    # parameters details:
     X_VAL=$1
     Y_VAL=$2
-    SENSOR_NAME=$3
-    # settings:
+    VALUE_STR=$3
+    # settings details:
     X_BAR=C
     BAR_SIZE=8
     MINI=0
     MAXI=100
-    VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_NAME)    
+    #~ VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_VALUE)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
@@ -180,16 +188,16 @@ function cpufan() {
     fi
 }
 function gpufan() {
-    # parameters:
+    # parameters details:
     X_VAL=$1
     Y_VAL=$2
-    SENSOR_NAME=$3
-    # settings:
+    VALUE_STR=$3
+    # settings details:
     X_BAR=C
     BAR_SIZE=8
     MINI=0
     MAXI=3200
-    VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_NAME)    
+    #~ VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_VALUE)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RM")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
@@ -227,10 +235,12 @@ function loop() {
             get_sensors_json
             # display data line by line on LCD
             # X Y position in LCD display, sensor namespace
-            cputemp 4 0 '."k10temp-pci-00c3".Tctl.temp1_input'
-            ram100 4 1
-            gputemp 4 2 '."amdgpu-pci-0900".edge.temp1_input'
-            gpufan 4 3 '."amdgpu-pci-0900".fan1.fan1_input'
+            CPU_TEMP=$(get_jsonvalue '."k10temp-pci-00c3".Tctl.temp1_input')
+            echo "cpu temp: " $CPU_TEMP
+            cputemp 4 0 $CPU_TEMP
+            ram100  4 1
+            gputemp 4 2 $(echo $SENSORS_JSON | jq '."amdgpu-pci-0900".edge.temp1_input')
+            gpufan  4 3 $(echo $SENSORS_JSON | jq '."amdgpu-pci-0900".fan1.fan1_input')
             sleep $1
         done
     else

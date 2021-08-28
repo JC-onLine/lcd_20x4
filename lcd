@@ -80,11 +80,12 @@ function get_sensors_json() {
 function get_jsonvalue() {
     # parameters details:
     SENSOR_NAME=$1
-    #~ echo "get_jsonvalue: " $SENSOR_NAME
     # get value in str format from json sensors
     echo $(echo $SENSORS_JSON | jq $SENSOR_NAME)
 }
-
+function get_mem() {
+    echo $(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
+}
 
 # ==== HIGH LEVEL FUNCTIONS ====
 function init_app() {
@@ -241,7 +242,7 @@ function loop() {
             # display data line by line on LCD
             # X Y position in LCD display, sensor namespace
             cputemp 4 0 $(get_jsonvalue '."k10temp-pci-00c3".Tctl.temp1_input')
-            ram100  4 1 $(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
+            ram100  4 1 $(get_mem)
             gputemp 4 2 $(get_jsonvalue '."amdgpu-pci-0900".edge.temp1_input')
             gpufan  4 3 $(get_jsonvalue '."amdgpu-pci-0900".fan1.fan1_input')
             sleep $1

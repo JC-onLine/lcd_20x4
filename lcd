@@ -8,6 +8,34 @@ LCD=/dev/ttyUSB0
 # ======================================================
 
 
+# ==== MOTHER BOARD DETECTION ====
+function mother_board() {
+    # motherboard name
+    BOARD_NAME=$(cat /sys/devices/virtual/dmi/id/board_name)
+    # profile file with sensors namespaces in json format
+    BOARD_PROFILE_FILE=$(echo $BOARD_NAME".json" | tr " " "-")
+    # use profile file or create a snippets for example
+    if [[ -e $BOARD_PROFILE_FILE ]]; then
+        echo "Profile file $BOARD_PROFILE_FILE read."
+        PROFILE_FILE=$(cat $BOARD_PROFILE_FILE)
+        CPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".cpu.temp_namespace")
+        GPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.temp_namespace")
+        GPU_FAN_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.fan_namespace")
+        echo $PROFILE_FILE
+        echo $CPU_TEMP_NAMESPACE
+        echo $GPU_TEMP_NAMESPACE
+        echo $GPU_FAN_NAMESPACE
+    else
+        echo "Profile file $BOARD_PROFILE_FILE not found:"
+        cat sensors-snippets.json > $BOARD_PROFILE_FILE
+        echo "    Snippets was created in file $BOARD_PROFILE_FILE."
+        echo "    Please, complete the sensors namespace."
+        echo "    Use sensors -j to have sensors namespaces details."
+    fi
+}
+
+
+
 # ==== LOW LEVEL FUNCTIONS ====
 function init() {
     echo "\xA0" > $LCD
@@ -90,17 +118,22 @@ function get_mem() {
 # ==== HIGH LEVEL FUNCTIONS ====
 function init_app() {
     # init lcd
-    ./lcd init
+    init
+    # print motherboard name
+    #~ mother_board
+    printxy 0 0 "Motherboard:"
+    printxy 0 1 $BOARD_NAME
     # load font
-    ./lcd printxy 1 1 "Fonts-loading"
+    printxy 0 3 "Fonts-loading"
     for (( i=5; i<=8; i++ )); do
-        ./lcd font $i
-        ./lcd print "2E"
+        font $i
+        print "2E"
         sleep 0.2
     done
-    sleep 1
+    sleep 5
     # display static labels 
     clear
+    cursoroff
     printxy 0 0 "CPU" # X Y position & label
     printxy 0 1 "RAM"
     printxy 0 2 "GPU"
@@ -152,7 +185,6 @@ function cputemp() {
     BAR_SIZE=8
     MINI=30
     MAXI=80
-    #~ VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_VALUE)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
@@ -172,7 +204,6 @@ function ram100() {
     MINI=0
     MAXI=100
     # Percent RAM calcul
-    #~ VALUE_STR=$(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "%")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
@@ -191,7 +222,6 @@ function gputemp() {
     BAR_SIZE=8
     MINI=0
     MAXI=100
-    #~ VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_VALUE)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
@@ -233,8 +263,9 @@ function uptime() {
     # uptime -s > $LCD
 }
 function loop() {
+    # first parameter number control 
     if [[ $1 =~ [0-9]+ ]]; then
-        # init display, load font, print static label
+        # init display, print motherboard name, load font, print static label
         init_app
         while [[ 1 ]]; do
             # read sensors

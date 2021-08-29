@@ -1,0 +1,9 @@
+{
+    "cpu":{
+        "cpu_temp_namespace": '."k10temp-pci-00c3".Tctl.temp1_input'
+    }
+    "gpu":{
+        "gpu_temp_namespace": '."amdgpu-pci-0900".edge.temp1_input',
+        "gpu_fan_namespace": '."amdgpu-pci-0900".fan1.fan1_input'
+    }
+}

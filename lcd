@@ -21,7 +21,6 @@ function mother_board() {
         CPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".cpu.temp_namespace")
         GPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.temp_namespace")
         GPU_FAN_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.fan_namespace")
-        echo $PROFILE_FILE
         echo $CPU_TEMP_NAMESPACE
         echo $GPU_TEMP_NAMESPACE
         echo $GPU_FAN_NAMESPACE
@@ -31,6 +30,7 @@ function mother_board() {
         echo "    Snippets was created in file $BOARD_PROFILE_FILE."
         echo "    Please, complete the sensors namespace."
         echo "    Use sensors -j to have sensors namespaces details."
+        echo "Press Ctrl+C to stop the script."
     fi
 }
 
@@ -107,9 +107,9 @@ function get_sensors_json() {
 }
 function get_jsonvalue() {
     # parameters details:
-    SENSOR_NAME=$1
+    SENSOR_NAMESPACE=$1
     # get value in str format from json sensors
-    echo $(echo $SENSORS_JSON | jq $SENSOR_NAME)
+    echo $(echo $SENSORS_JSON | jq $SENSOR_NAMESPACE)
 }
 function get_mem() {
     echo $(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
@@ -120,7 +120,7 @@ function init_app() {
     # init lcd
     init
     # print motherboard name
-    #~ mother_board
+    mother_board
     printxy 0 0 "Motherboard:"
     printxy 0 1 $BOARD_NAME
     # load font
@@ -220,13 +220,13 @@ function gputemp() {
     # settings details:
     X_BAR=C
     BAR_SIZE=8
-    MINI=0
-    MAXI=100
+    MINI=30
+    MAXI=80
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-    VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "%")
+    VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "C")
     # Display RAM & progressbar
     printxy $X_VAL $Y_VAL $VALUE_DISPLAY
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
@@ -272,10 +272,10 @@ function loop() {
             get_sensors_json
             # display data line by line on LCD
             # X Y position in LCD display, sensor namespace
-            cputemp 4 0 $(get_jsonvalue '."k10temp-pci-00c3".Tctl.temp1_input')
+            cputemp 4 0 $(get_jsonvalue $CPU_TEMP_NAMESPACE)
             ram100  4 1 $(get_mem)
-            gputemp 4 2 $(get_jsonvalue '."amdgpu-pci-0900".edge.temp1_input')
-            gpufan  4 3 $(get_jsonvalue '."amdgpu-pci-0900".fan1.fan1_input')
+            gputemp 4 2 $(get_jsonvalue $GPU_TEMP_NAMESPACE)
+            gpufan  4 3 $(get_jsonvalue $GPU_FAN_NAMESPACE)
             sleep $1
         done
     else

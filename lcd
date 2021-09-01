@@ -18,9 +18,9 @@ function mother_board() {
     if [[ -e $BOARD_PROFILE_FILE ]]; then
         echo "Profile file $BOARD_PROFILE_FILE read."
         PROFILE_FILE=$(cat $BOARD_PROFILE_FILE)
-        CPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".cpu.temp_namespace")
-        GPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.temp_namespace")
-        GPU_FAN_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.fan_namespace")
+        CPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".cpu.temp_namespace" | tr -d '"' | tr "'" '"')
+        GPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.temp_namespace" | tr -d '"' | tr "'" '"')
+        GPU_FAN_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.fan_namespace" | tr -d '"' | tr "'" '"')
         echo $CPU_TEMP_NAMESPACE
         echo $GPU_TEMP_NAMESPACE
         echo $GPU_FAN_NAMESPACE

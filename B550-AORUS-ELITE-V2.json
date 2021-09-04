@@ -17,7 +17,7 @@
     "data2":{
         "label": "MEM",
         "label_x": 0,
-        "label_y": 0,
+        "label_y": 1,
         "data_x": 4,
         "data_y": 1,
         "get_data_function": "$(get_mem)",
@@ -31,7 +31,7 @@
     "data3":{
         "label": "GPU",
         "label_x": 0,
-        "label_y": 0,
+        "label_y": 2,
         "data_x": 4,
         "data_y": 2,
         "sensors_namespace": ".'amdgpu-pci-0900'.edge.temp1_input",
@@ -46,7 +46,7 @@
     "data4":{
         "label": "GPU",
         "label_x": 0,
-        "label_y": 0,
+        "label_y": 3,
         "data_x": 4,
         "data_y": 3,
         "sensors_namespace": ".'amdgpu-pci-0900'.fan1.fan1_input",

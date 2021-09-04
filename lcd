@@ -26,13 +26,6 @@ function mother_board() {
         # What jq use :  ."k10temp-pci-00c3".Tctl.temp1_input
         # 1st step: delete ["]
         # 2nd step: replace ['] by ["]
-        CPU_TEMP_NAMESPACE=$(echo $PROFILE_CONTENT | jq ".data1.sensors_namespace" | tr -d '"' | tr "'" '"')
-        GPU_TEMP_NAMESPACE=$(echo $PROFILE_CONTENT | jq ".data3.sensors_namespace" | tr -d '"' | tr "'" '"')
-        GPU_FAN_NAMESPACE=$(echo $PROFILE_CONTENT | jq ".data4.sensors_namespace" | tr -d '"' | tr "'" '"')
-        # Debug use only
-        echo $CPU_TEMP_NAMESPACE
-        echo $GPU_TEMP_NAMESPACE
-        echo $GPU_FAN_NAMESPACE
     else
         echo "Profile file $BOARD_PROFILE_CONTENT_NAME not found:"
         cat sensors-snippets.json > $BOARD_PROFILE_CONTENT_NAME
@@ -98,7 +91,6 @@ function font() {
             echo "\xA4\x08\x00\x1F\x1F\x1F\x1F\x1F\x00\x00" > $LCD
         ;;
     esac
-    #~ print $1
 }
 function format() {
     VALUE=$1    # numeric value in int or float
@@ -118,7 +110,12 @@ function get_profile() {
     # parameters details:
     PROFILE_NAMESPACE=$1
     # get value in str format from json profile file
-    echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE)
+    if [[ $PROFILE_NAMESPACE == *"sensors_namespace"* ]] ; then
+        # sensors_namespace adaptation: rename single cote in double cote
+        echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"' | tr "'" '"')
+    else
+        echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"')
+    fi
 }
 function get_sensor() {
     # parameters details:
@@ -137,9 +134,9 @@ function init_app() {
     # print motherboard name
     mother_board
     
-    echo "start..."
-    CDE=$(echo $PROFILE_CONTENT | jq ".data1.cde" | tr -d '"')
-    echo $($CDE)
+    #~ echo "start..."
+    #~ CDE=$(echo $PROFILE_CONTENT | jq ".data1.cde" | tr -d '"')
+    #~ echo $($CDE)
     
     printxy 0 0 "Motherboard:"
     printxy 0 1 $BOARD_NAME
@@ -148,17 +145,17 @@ function init_app() {
     for (( i=5; i<=8; i++ )); do
         font $i
         print "2E"
-        sleep 0.3
+        sleep 0.1
     done
-    sleep 4
+    sleep 1
     # display static labels 
     clear
     cursoroff
-    #~ printxy 0 0 $(get_profile ".data1.label")    # X Y position & label
-    printxy 0 0 "CPU"    # X Y position & label
-    printxy 0 1 "RAM"
-    printxy 0 2 "GPU"
-    printxy 0 3 "GPU"
+    # X Y position & print label
+    printxy $(get_profile ".data1.label_x") $(get_profile ".data1.label_y") $(get_profile ".data1.label")
+    printxy $(get_profile ".data2.label_x") $(get_profile ".data2.label_y") $(get_profile ".data2.label")
+    printxy $(get_profile ".data3.label_x") $(get_profile ".data3.label_y") $(get_profile ".data3.label")
+    printxy $(get_profile ".data4.label_x") $(get_profile ".data4.label_y") $(get_profile ".data4.label")
 }
 function progressbar() {
     BAR_X=$1 # param1: X display position.
@@ -191,7 +188,6 @@ function progressbar() {
                 BAR="$BAR_END"
             fi
         fi
-        #~ printf "\xA2\x%d\x00" $BAR > $LCD
         print $BAR
         #~ echo "\xA2\x$BAR\x00" > $LCD
     done    
@@ -267,7 +263,6 @@ function gpufan() {
     BAR_SIZE=8
     MINI=0
     MAXI=3200
-    #~ VALUE_STR=$(echo $SENSORS_JSON | jq $SENSOR_VALUE)    
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RM")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
@@ -293,15 +288,10 @@ function loop() {
             get_sensors_json
             # display data line by line on LCD
             # X Y position in LCD display, sensor namespace
-            cputemp 4 0 $(get_sensor $CPU_TEMP_NAMESPACE)
+            cputemp 4 0 $(get_sensor $(get_profile ".data1.sensors_namespace"))
             ram100  4 1 $(get_mem)
-            gputemp 4 2 $(get_sensor $GPU_TEMP_NAMESPACE)
-            gpufan  4 3 $(get_sensor $GPU_FAN_NAMESPACE)
-            
-            #~ cputemp 4 0 $(echo $CPU_TEMP_NAMESPACE)
-            #~ ram100  4 1 $(get_mem)
-            #~ gputemp 4 2 $(echo $GPU_TEMP_NAMESPACE)
-            #~ gpufan  4 3 $(echo $GPU_FAN_NAMESPACE)
+            gputemp 4 2 $(get_sensor $(get_profile ".data3.sensors_namespace"))
+            gpufan  4 3 $(get_sensor $(get_profile ".data4.sensors_namespace"))
             sleep $1
         done
     else

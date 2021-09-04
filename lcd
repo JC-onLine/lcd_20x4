@@ -13,12 +13,12 @@ function mother_board() {
     # Get motherboard name
     BOARD_NAME=$(cat /sys/devices/virtual/dmi/id/board_name)
     # Compose profile file name
-    BOARD_PROFILE_FILE=$(echo $BOARD_NAME".json" | tr " " "-")
+    BOARD_PROFILE_CONTENT_NAME=$(echo $BOARD_NAME".json" | tr " " "-")
     # use profile file or create a snippets for example
-    if [[ -e $BOARD_PROFILE_FILE ]]; then
-        echo "Profile file $BOARD_PROFILE_FILE read."
+    if [[ -e $BOARD_PROFILE_CONTENT_NAME ]]; then
+        echo "Profile file $BOARD_PROFILE_CONTENT_NAME read."
         # Get 
-        PROFILE_FILE=$(cat $BOARD_PROFILE_FILE)
+        PROFILE_CONTENT=$(cat $BOARD_PROFILE_CONTENT_NAME)
         # Note: need to use double 'tr' to inverse ["] and [']
         #       json data file need to begin and end with ["]
         #       'sensors' cli use [-] in namespace, so we must escape it with ["]
@@ -26,17 +26,17 @@ function mother_board() {
         # What jq use :  ."k10temp-pci-00c3".Tctl.temp1_input
         # 1st step: delete ["]
         # 2nd step: replace ['] by ["]
-        CPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".cpu.temp_namespace" | tr -d '"' | tr "'" '"')
-        GPU_TEMP_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.temp_namespace" | tr -d '"' | tr "'" '"')
-        GPU_FAN_NAMESPACE=$(echo $PROFILE_FILE | jq ".gpu.fan_namespace" | tr -d '"' | tr "'" '"')
+        CPU_TEMP_NAMESPACE=$(echo $PROFILE_CONTENT | jq ".data1.sensors_namespace" | tr -d '"' | tr "'" '"')
+        GPU_TEMP_NAMESPACE=$(echo $PROFILE_CONTENT | jq ".data3.sensors_namespace" | tr -d '"' | tr "'" '"')
+        GPU_FAN_NAMESPACE=$(echo $PROFILE_CONTENT | jq ".data4.sensors_namespace" | tr -d '"' | tr "'" '"')
         # Debug use only
         echo $CPU_TEMP_NAMESPACE
         echo $GPU_TEMP_NAMESPACE
         echo $GPU_FAN_NAMESPACE
     else
-        echo "Profile file $BOARD_PROFILE_FILE not found:"
-        cat sensors-snippets.json > $BOARD_PROFILE_FILE
-        echo "    Snippets was created in file $BOARD_PROFILE_FILE."
+        echo "Profile file $BOARD_PROFILE_CONTENT_NAME not found:"
+        cat sensors-snippets.json > $BOARD_PROFILE_CONTENT_NAME
+        echo "    Snippets was created in file $BOARD_PROFILE_CONTENT_NAME."
         echo "    Please, complete the sensors namespace."
         echo "    Use sensors -j to have sensors namespaces details."
         echo "Press Ctrl+C to stop the script."
@@ -114,7 +114,13 @@ function get_sensors_json() {
     # parameters:
     SENSORS_JSON=$(sensors -j)
 }
-function get_jsonvalue() {
+function get_profile() {
+    # parameters details:
+    PROFILE_NAMESPACE=$1
+    # get value in str format from json profile file
+    echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE)
+}
+function get_sensor() {
     # parameters details:
     SENSOR_NAMESPACE=$1
     # get value in str format from json sensors
@@ -130,6 +136,11 @@ function init_app() {
     init
     # print motherboard name
     mother_board
+    
+    echo "start..."
+    CDE=$(echo $PROFILE_CONTENT | jq ".data1.cde" | tr -d '"')
+    echo $($CDE)
+    
     printxy 0 0 "Motherboard:"
     printxy 0 1 $BOARD_NAME
     # load font
@@ -143,7 +154,8 @@ function init_app() {
     # display static labels 
     clear
     cursoroff
-    printxy 0 0 "CPU" # X Y position & label
+    #~ printxy 0 0 $(get_profile ".data1.label")    # X Y position & label
+    printxy 0 0 "CPU"    # X Y position & label
     printxy 0 1 "RAM"
     printxy 0 2 "GPU"
     printxy 0 3 "GPU"
@@ -281,10 +293,15 @@ function loop() {
             get_sensors_json
             # display data line by line on LCD
             # X Y position in LCD display, sensor namespace
-            cputemp 4 0 $(get_jsonvalue $CPU_TEMP_NAMESPACE)
+            cputemp 4 0 $(get_sensor $CPU_TEMP_NAMESPACE)
             ram100  4 1 $(get_mem)
-            gputemp 4 2 $(get_jsonvalue $GPU_TEMP_NAMESPACE)
-            gpufan  4 3 $(get_jsonvalue $GPU_FAN_NAMESPACE)
+            gputemp 4 2 $(get_sensor $GPU_TEMP_NAMESPACE)
+            gpufan  4 3 $(get_sensor $GPU_FAN_NAMESPACE)
+            
+            #~ cputemp 4 0 $(echo $CPU_TEMP_NAMESPACE)
+            #~ ram100  4 1 $(get_mem)
+            #~ gputemp 4 2 $(echo $GPU_TEMP_NAMESPACE)
+            #~ gpufan  4 3 $(echo $GPU_FAN_NAMESPACE)
             sleep $1
         done
     else

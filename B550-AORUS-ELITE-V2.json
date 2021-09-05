@@ -1,6 +1,6 @@
 {
     "data1":{
-        "cde": "$(pwd)",
+        "cde": "$(ls)",
         "label": "CPU",
         "label_x": 0,
         "label_y": 0,
@@ -55,7 +55,7 @@
         "data_unit": "RM",
         "bargraph_x": "C",
         "bargraph_size": 8,
-        "bargraph_mini": 30,
-        "bargraph_maxi": 80
+        "bargraph_mini": 0,
+        "bargraph_maxi": 3000
     }
 }

@@ -21,7 +21,7 @@ function mother_board() {
         PROFILE_CONTENT=$(cat $BOARD_PROFILE_CONTENT_NAME)
         # Note: need to use double 'tr' to inverse ["] and [']
         #       json data file need to begin and end with ["]
-        #       'sensors' cli use [-] in namespace, so we must escape it with ["]
+        #       'sensors' cli use [-] in namespace, so we must escape [-] with ["]
         # In json file: ".'k10temp-pci-00c3'.Tctl.temp1_input"
         # What jq use :  ."k10temp-pci-00c3".Tctl.temp1_input
         # 1st step: delete ["]
@@ -135,7 +135,8 @@ function init_app() {
     
     #~ echo "start..."
     #~ CDE=$(echo $PROFILE_CONTENT | jq ".data1.cde" | tr -d '"')
-    #~ echo $($CDE)
+    #~ CDE=$(ls)
+    #~ $($CDE)
     
     printxy 0 0 "Motherboard:"
     printxy 0 1 $BOARD_NAME
@@ -208,7 +209,7 @@ function print_line() {
     # formating
     DATA_FLOAT=$(echo $DATA_STR | tr "." ",")
     DATA_INT=$(printf "%.0f" $DATA_FLOAT)
-    DATA_DISPLAY=$(format $DATA_FLOAT "%5.1f" "C")
+    DATA_DISPLAY=$(format $DATA_FLOAT $DATA_FORMAT $DATA_UNIT)
     # display
     printxy $DATA_X $DATA_Y $DATA_DISPLAY
     progressbar $BAR_X $DATA_Y $BAR_SIZE $DATA_INT $BAR_MINI $BAR_MAXI
@@ -308,12 +309,10 @@ function loop() {
             # read sensors
             get_sensors_json
             # display data line by line on LCD
-            # X Y position in LCD display, sensor namespace
-            #~ cputemp 4 0 $(get_sensor $(get_profile ".data1.sensors_namespace"))
-            print_line 1
-            ram100  4 1 $(get_mem)
-            gputemp 4 2 $(get_sensor $(get_profile ".data3.sensors_namespace"))
-            gpufan  4 3 $(get_sensor $(get_profile ".data4.sensors_namespace"))
+            for idx in $( seq 1 4 ) ; do
+                print_line $idx
+            done
+            #~ ram100  4 1 $(get_mem)
             sleep $1
         done
     else
@@ -321,7 +320,8 @@ function loop() {
   fi
 }
 
-#main
+# main
+# lcd pluged on USB control
 if [[ -e $LCD ]]; then
     case $1 in
         off)
@@ -337,18 +337,6 @@ if [[ -e $LCD ]]; then
         cls | clear)
             clear
             cursoroff
-        ;;
-        xy)
-            gotoxy $2 $3
-            if   [[ $4 == "cputemp" ]]; then
-                cputemp $4 $5
-            elif [[ $4 == "ram100" ]]; then
-                ram100 $4 $5
-            elif [[ $4 == "gputemp" ]]; then
-                gputemp $4 $5
-            elif [[ $4 == "gpufan" ]]; then
-                gpufan $4 $5
-            fi
         ;;
         print)
           print $2
@@ -370,18 +358,6 @@ if [[ -e $LCD ]]; then
         ;;
         uptime)
           uptime
-        ;;
-        cputemp)
-            cputemp $2 $3
-        ;;
-        ram100)
-            ram100 $2 $3
-        ;;
-        gputemp)
-            gputemp $2 $3
-        ;;
-        gpufan)
-            gpufan $2 $3
         ;;
         progressbar)
           progressbar $2 $3 $4 $5 $6 $7

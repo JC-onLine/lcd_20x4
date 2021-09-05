@@ -101,26 +101,26 @@ function format() {
     IFS=$'\t\n'
     echo $VALUE_DISPLAY
 }
-function get_sensors_json() {
+function Set_cache_sensors_json() {
     # parameters:
-    SENSORS_JSON=$(sensors -j)
+    CACHE_SENSORS_JSON=$(sensors -j)
 }
 function get_profile() {
     # parameters details:
     PROFILE_NAMESPACE=$1
     # get value in str format from json profile file
-    if [[ $PROFILE_NAMESPACE == *"sensors_namespace"* ]] ; then
+    if [[ $PROFILE_NAMESPACE == *"namespace"* ]] ; then
         # sensors_namespace adaptation: rename single cote in double cote
         echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"' | tr "'" '"')
     else
         echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"')
     fi
 }
-function get_sensor() {
+function get_cache_sensor() {
     # parameters details:
     SENSOR_NAMESPACE=$1
-    # get value in str format from json sensors
-    echo $(echo $SENSORS_JSON | jq $SENSOR_NAMESPACE)
+    # get value in str format from json sensors cache
+    echo $(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE)
 }
 function get_mem() {
     # return % memory used
@@ -133,14 +133,8 @@ function init_app() {
     init_lcd
     # print motherboard name
     mother_board
-    
-    #~ echo "start..."
-    #~ CDE=ls
-    #~ CDE=$(echo $PROFILE_CONTENT | jq ".data2.data_method" | tr -d '"')
-    #~ echo $CDE
-    #~ echo $($CDE)
-    echo $($(echo $PROFILE_CONTENT | jq ".data2.data_method" | tr -d '"'))
-    
+    # uncomment for test only: print get_mem value on app startup
+    #~ echo $($(echo $PROFILE_CONTENT | jq ".data2.data_method" | tr -d '"'))
     printxy 0 0 "Motherboard:"
     printxy 0 1 $BOARD_NAME
     # load font
@@ -207,11 +201,20 @@ function print_line() {
     BAR_SIZE=$(get_profile ".data$IDX.bargraph_size")
     BAR_MINI=$(get_profile ".data$IDX.bargraph_mini")
     BAR_MAXI=$(get_profile ".data$IDX.bargraph_maxi")
-    # get data from sensors
+    # get data from sensors or system
     DATA_STR="0.1"
+    # this commented code is a test tu use fonction directly from json file settings:
+    # - it's running without paremeter, ex: get_mem
+    # - it's fail with parameter, ex: get_cache_sensor ."amdgpu-pci-0900".edge.temp1_input
+    #~ DATA_STR=echo $($(echo $PROFILE_CONTENT | jq ".data$IDX.get_data_function" | tr -d '"'))
+    #~ DATA_FUNC=$(get_profile ".data$IDX.get_data_function")
+    #~ echo "print_line:214 DATA_FUNC="$DATA_FUNC 
+    #~ DATA_STR=$($DATA_FUNC)
+    #~ echo "print_line:216 DATA_STR="$DATA_STR
+    # data_method:
     case $(get_profile ".data$IDX.data_method") in
         sensors)
-            DATA_STR=$(get_sensor $(get_profile ".data$IDX.sensors_namespace"))
+            DATA_STR=$(get_cache_sensor $(get_profile ".data$IDX.sensors_namespace"))
         ;;
         get_mem)
             DATA_STR=$(get_mem)
@@ -320,7 +323,7 @@ function loop() {
         init_app
         while [[ 1 ]]; do
             # read sensors
-            get_sensors_json
+            Set_cache_sensors_json
             # display data line by line on LCD
             for idx in $( seq 1 4 ) ; do
                 print_line $idx
@@ -329,7 +332,7 @@ function loop() {
             sleep $1
         done
     else
-        echo "Utilisation: lcd loop [frequency in second]"
+        echo "usage: lcd loop [frequency in second]"
   fi
 }
 

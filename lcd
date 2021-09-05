@@ -134,11 +134,12 @@ function init_app() {
     # print motherboard name
     mother_board
     
-    echo "start..."
-    CDE=ls
-    CDE=$(echo $PROFILE_CONTENT | jq ".data2.data_method" | tr -d '"')
-    echo $CDE
-    echo $($CDE)
+    #~ echo "start..."
+    #~ CDE=ls
+    #~ CDE=$(echo $PROFILE_CONTENT | jq ".data2.data_method" | tr -d '"')
+    #~ echo $CDE
+    #~ echo $($CDE)
+    echo $($(echo $PROFILE_CONTENT | jq ".data2.data_method" | tr -d '"'))
     
     printxy 0 0 "Motherboard:"
     printxy 0 1 $BOARD_NAME

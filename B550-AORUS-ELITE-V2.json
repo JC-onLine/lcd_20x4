@@ -1,6 +1,6 @@
 {
     "data1":{
-        "cde": "$(ls)",
+        "cde": "ls",
         "label": "CPU",
         "label_x": 0,
         "label_y": 0,

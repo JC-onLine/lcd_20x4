@@ -135,8 +135,9 @@ function init_app() {
     mother_board
     
     echo "start..."
-    CDE=$(echo $PROFILE_CONTENT | jq ".data1.cde" | tr -d '"')
     CDE=ls
+    CDE=$(echo $PROFILE_CONTENT | jq ".data2.data_method" | tr -d '"')
+    echo $CDE
     echo $($CDE)
     
     printxy 0 0 "Motherboard:"

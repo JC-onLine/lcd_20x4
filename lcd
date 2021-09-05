@@ -94,9 +94,8 @@ function font() {
 }
 function format() {
     VALUE=$1    # numeric value in int or float
-    TYPE=$2        # example: int or float
-    FORMAT=$3    # example: "%6.1f" used by printf
-    UNIT=$4        # example: C, %, RM ...
+    FORMAT=$2   # example: "%6.1f" used by printf
+    UNIT=$3     # example: C, %, RM ...
     VALUE_DISPLAY=$(IFS=$'\n'; printf "$FORMAT%s" $SPACE $VALUE $UNIT)
     VALUE_DISPLAY=$(echo $VALUE_DISPLAY | tr "," ".")
     IFS=$'\t\n'
@@ -192,6 +191,28 @@ function progressbar() {
         #~ echo "\xA2\x$BAR\x00" > $LCD
     done    
 }
+function print_line() {
+    # parameters details:
+    IDX=$1
+    # get data from sensors
+    DATA_STR=$(get_sensor $(get_profile ".data$IDX.sensors_namespace"))
+    # settings details:
+    DATA_X=$(get_profile ".data$IDX.data_x")
+    DATA_Y=$(get_profile ".data$IDX.data_y")
+    DATA_FORMAT=$(get_profile ".data$IDX.data_format")
+    DATA_UNIT=$(get_profile ".data$IDX.data_unit")
+    BAR_X=$(get_profile ".data$IDX.bargraph_x")
+    BAR_SIZE=$(get_profile ".data$IDX.bargraph_size")
+    BAR_MINI=$(get_profile ".data$IDX.bargraph_mini")
+    BAR_MAXI=$(get_profile ".data$IDX.bargraph_maxi")
+    # formating
+    DATA_FLOAT=$(echo $DATA_STR | tr "." ",")
+    DATA_INT=$(printf "%.0f" $DATA_FLOAT)
+    DATA_DISPLAY=$(format $DATA_FLOAT "%5.1f" "C")
+    # display
+    printxy $DATA_X $DATA_Y $DATA_DISPLAY
+    progressbar $BAR_X $DATA_Y $BAR_SIZE $DATA_INT $BAR_MINI $BAR_MAXI
+}
 function cputemp() {
     # parameters details:
     X_VAL=$1
@@ -205,7 +226,7 @@ function cputemp() {
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-    VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "C")
+    VALUE_DISPLAY=$(format $VALUE_FLOAT "%5.1f" "C")
     # display
     printxy $X_VAL $Y_VAL $VALUE_DISPLAY
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
@@ -224,7 +245,7 @@ function ram100() {
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "%")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-    VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "%")
+    VALUE_DISPLAY=$(format $VALUE_FLOAT "%5.1f" "%")
     # Display RAM & progressbar
     printxy $X_VAL $Y_VAL $VALUE_DISPLAY
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
@@ -243,7 +264,7 @@ function gputemp() {
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "+°C")
     VALUE_FLOAT=$(echo $VALUE_FLOAT | tr "." ",")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-    VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%5.1f" "C")
+    VALUE_DISPLAY=$(format $VALUE_FLOAT "%5.1f" "C")
     # Display RAM & progressbar
     printxy $X_VAL $Y_VAL $VALUE_DISPLAY
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
@@ -266,7 +287,7 @@ function gpufan() {
     # formating
     VALUE_FLOAT=$(echo $VALUE_STR | tr -d "RM")
     VALUE_INT=$(printf "%.0f" $VALUE_FLOAT)
-    VALUE_DISPLAY=$(format $VALUE_FLOAT "float" "%4.0f" "RM")
+    VALUE_DISPLAY=$(format $VALUE_FLOAT "%4.0f" "RM")
     # Display RAM & progressbar
     printxy $X_VAL $Y_VAL $VALUE_DISPLAY
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
@@ -288,7 +309,8 @@ function loop() {
             get_sensors_json
             # display data line by line on LCD
             # X Y position in LCD display, sensor namespace
-            cputemp 4 0 $(get_sensor $(get_profile ".data1.sensors_namespace"))
+            #~ cputemp 4 0 $(get_sensor $(get_profile ".data1.sensors_namespace"))
+            print_line 1
             ram100  4 1 $(get_mem)
             gputemp 4 2 $(get_sensor $(get_profile ".data3.sensors_namespace"))
             gpufan  4 3 $(get_sensor $(get_profile ".data4.sensors_namespace"))

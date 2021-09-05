@@ -39,7 +39,7 @@ function mother_board() {
 
 
 # ==== LOW LEVEL FUNCTIONS ====
-function init() {
+function init_lcd() {
     echo "\xA0" > $LCD
     sleep 0.5
 }
@@ -71,7 +71,7 @@ function cursoroff() {
     echo "\xA3\x0C" > $LCD
 }
 function ascii() {
-    init
+    init_lcd
     cursoron
     echo "\x$1" > $LCD
 }
@@ -123,19 +123,20 @@ function get_sensor() {
     echo $(echo $SENSORS_JSON | jq $SENSOR_NAMESPACE)
 }
 function get_mem() {
-    echo $(free | grep "Mem" | awk '{printf "%5.2f%", (100 * $3 / $2)}')
+    # return % memory used
+    echo $(free | grep "Mem" | awk '{printf "%5.2f", (100 * $3 / $2)}')
 }
 
 # ==== HIGH LEVEL FUNCTIONS ====
 function init_app() {
     # init lcd
-    init
+    init_lcd
     # print motherboard name
     mother_board
     
     #~ echo "start..."
     #~ CDE=$(echo $PROFILE_CONTENT | jq ".data1.cde" | tr -d '"')
-    #~ CDE=$(ls)
+    #~ CDE=ls
     #~ $($CDE)
     
     printxy 0 0 "Motherboard:"
@@ -194,21 +195,32 @@ function progressbar() {
 }
 function print_line() {
     # parameters details:
-    IDX=$1
-    # get data from sensors
-    DATA_STR=$(get_sensor $(get_profile ".data$IDX.sensors_namespace"))
+    IDX=$1  # json data group index like data1, data2 ...
     # settings details:
     DATA_X=$(get_profile ".data$IDX.data_x")
     DATA_Y=$(get_profile ".data$IDX.data_y")
     DATA_FORMAT=$(get_profile ".data$IDX.data_format")
     DATA_UNIT=$(get_profile ".data$IDX.data_unit")
+    DATA_METHOD=$(get_profile ".data$IDX.data_method")
     BAR_X=$(get_profile ".data$IDX.bargraph_x")
     BAR_SIZE=$(get_profile ".data$IDX.bargraph_size")
     BAR_MINI=$(get_profile ".data$IDX.bargraph_mini")
     BAR_MAXI=$(get_profile ".data$IDX.bargraph_maxi")
+    # get data from sensors
+    DATA_STR="0.1"
+    case $(get_profile ".data$IDX.data_method") in
+        sensors)
+            DATA_STR=$(get_sensor $(get_profile ".data$IDX.sensors_namespace"))
+        ;;
+        get_mem)
+            DATA_STR=$(get_mem)
+        ;;
+    esac
     # formating
-    DATA_FLOAT=$(echo $DATA_STR | tr "." ",")
-    DATA_INT=$(printf "%.0f" $DATA_FLOAT)
+    # switch . by , decimal for printf compatibility
+    DATA_FLOAT=$(echo $DATA_STR | tr "." ",")   
+    # convert to integer (without decimal)
+    DATA_INT=$(printf "%.0f" $DATA_FLOAT)       
     DATA_DISPLAY=$(format $DATA_FLOAT $DATA_FORMAT $DATA_UNIT)
     # display
     printxy $DATA_X $DATA_Y $DATA_DISPLAY
@@ -331,7 +343,7 @@ if [[ -e $LCD ]]; then
             lcdon
         ;;
         init)
-            init
+            init_lcd
             cursoroff
         ;;
         cls | clear)

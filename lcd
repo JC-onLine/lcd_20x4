@@ -110,7 +110,8 @@ function get_profile() {
     PROFILE_NAMESPACE=$1
     # get value in str format from json profile file
     if [[ $PROFILE_NAMESPACE == *"namespace"* ]] ; then
-        # sensors_namespace adaptation: rename single cote in double cote
+        # sensors_namespace adaptation: swich single cote and double cote
+        PROFILE_NAMESPACE=$(echo $PROFILE_NAMESPACE | tr '"' '|' | tr "'" '"' | tr '|' "'")
         echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"' | tr "'" '"')
     else
         echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"')
@@ -127,8 +128,48 @@ function get_mem() {
     echo $(free | grep "Mem" | awk '{printf "%5.2f", (100 * $3 / $2)}')
 }
 
+
+        declare -A DATA1
 # ==== HIGH LEVEL FUNCTIONS ====
+function get_settings() {
+    # 4 array of hash to get json profile settings in variables images
+    IDX=1
+    #~ for IDX in $( seq 1 4 ); do
+        DATA1=( \
+            [DATA_X]=$(get_profile ".data$IDX.data_x") \
+            [DATA_Y]=$(get_profile ".data$IDX.data_y") \
+            [DATA_FORMAT]=$(get_profile ".data$IDX.data_format") \
+            [DATA_UNIT]=$(get_profile ".data$IDX.data_unit") \
+            [DATA_METHOD]=$(get_profile ".data$IDX.data_method") \
+            [BAR_X]=$(get_profile ".data$IDX.bargraph_x") \
+            [BAR_SIZE]=$(get_profile ".data$IDX.bargraph_size") \
+            [BAR_MINI]=$(get_profile ".data$IDX.bargraph_mini") \
+            [BAR_MAXI]=$(get_profile ".data$IDX.bargraph_maxi"))
+    #~ done
+}
+function echo_settings() {
+    # 4 array of hash to get json profile settings in variables images
+    IDX=1
+    #~ for IDX in $( seq 1 4 ); do
+        #~ echo ${DATA1[DATA_X]}
+        #~ echo ${DATA1[DATA_Y]}
+        #~ echo ${DATA1[DATA_FORMAT]}
+        #~ echo ${DATA1[DATA_UNIT]}
+        #~ echo ${DATA1[DATA_METHOD]}
+        #~ echo ${DATA1[BAR_X]}
+        #~ echo ${DATA1[BAR_SIZE]}
+        #~ echo ${DATA1[BAR_MINI]}
+        #~ echo ${DATA1[BAR_MAXI]}
+    #~ done
+    for DATA in "${!DATA1[@]}"
+    do
+      echo "Setting of $DATA is ${DATA1[$DATA]}"
+    done
+}
 function init_app() {
+    # get json profile settings
+    #~ get_settings
+    #~ echo_settings
     # init lcd
     init_lcd
     # print motherboard name

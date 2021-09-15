@@ -19,7 +19,7 @@ function mother_board() {
     # use profile file or create a snippets for example
     if [[ -e $BOARD_PROFILE_CONTENT_NAME ]]; then
         echo "Profile file $BOARD_PROFILE_CONTENT_NAME read."
-        # Get 
+        # Get
         PROFILE_CONTENT=$(cat $BOARD_PROFILE_CONTENT_NAME)
         # Note: need to use double 'tr' to inverse ["] and [']
         #       json data file need to begin and end with ["]
@@ -113,19 +113,19 @@ function get_profile() {
     VALUE=0
     # get value in str format from json profile file
     if [[ $PROFILE_NAMESPACE == *"namespace"* ]] ; then
-		#echo "get_profile: PROFILE_NAMESPACE: " $PROFILE_NAMESPACE >> $LOG_FILE
+		echo "get_profile:\t PROFILE_NAMESPACE:\t\t " $PROFILE_NAMESPACE >> $LOG_FILE
         ## sensors_namespace adaptation: swich single cote and double cote, replace # by space
-        
-        #~ PROFILE_NAMESPACE_SENSOR=$(echo $PROFILE_NAMESPACE | tr "#" " " | tr '"' "@" | tr "'" '"' | tr "@" "'")
-        
-        PROFILE_NAMESPACE_SENSOR=$(echo $PROFILE_NAMESPACE | sed 's/Core#/Core\ /g')   
-        #~ PROFILE_NAMESPACE_SENSOR=$(echo $PROFILE_NAMESPACE | tr '"' "'" | sed 's/Core#/Core\ /g' | tr "'" '"')	# echo $PROFILE_NAMESPACE | sed 's/"/"''"/g'   
+        #~ SENSOR_NAMESPACE=$(echo $PROFILE_NAMESPACE | tr '"' "'" | sed 's/Core#/Core\ /g' | tr "'" '"')	# echo $PROFILE_NAMESPACE | sed 's/"/"''"/g'
+        # SENSOR_NAMESPACE=$(echo $PROFILE_NAMESPACE | sed 's/Core#/Core\ /g')
+        #~ VALUE=$(echo $NS_BRUT | tr "#" " " | tr '"' "@" | tr "'" '"' | tr "@" "'")
 
-        echo "get_profile.PROFILE_NAMESPACE_SENSOR: " $PROFILE_NAMESPACE_SENSOR >> $LOG_FILE
+        NS_BRUT=$(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE)
+        echo "get_profile:\t NS_BRUT:\t\t " $NS_BRUT >> $LOG_FILE
+        VALUE=$(echo $NS_BRUT | tr "#" " " | tr '"' "@" | tr "'" '"' | tr "@" "'")
+        #~ echo "get_profile:\t NS_SENSOR:\t " $NS_SENSOR >> $LOG_FILE
         
-        VALUE=$(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE_SENSOR)
-        echo "get_profile.VALUE: " $VALUE >> $LOG_FILE
-        
+        #~ VALUE=$(echo $PROFILE_CONTENT | jq $NS_SENSOR)
+        echo "get_profile:\t VALUE:\t\t " $VALUE >> $LOG_FILE
     else
         VALUE=$(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"')
     fi
@@ -136,14 +136,14 @@ function get_cache_sensor() {
     SENSOR_NAMESPACE=$1
     VALUE=0.1
     # get value in str format from json sensors cache
-    echo "get_cache_sensor.SENSOR_NAMESPACE: " $SENSOR_NAMESPACE >> $LOG_FILE
+    echo "get_cache_sensor:\t SENSOR_NAMESPACE:\t " $SENSOR_NAMESPACE >> $LOG_FILE
     # echo "get_cache_sensor.SENSOR_NAMESPACE: " $(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE) >> $LOG_FILE
-    
+
     #~ echo "get_cache_sensor.CACHE_SENSORS_JSON: " $CACHE_SENSORS_JSON >> $LOG_FILE
     #~ echo "===	Sensor end	===" >> $LOG_FILE
-    
-    VALUE=$echo $(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE)
-    echo "get_cache_sensor.VALUE: " $VALUE >> $LOG_FILE
+
+    VALUE=$(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE)
+    echo "get_cache_sensor:\t VALUE:\t " $VALUE >> $LOG_FILE
     echo $VALUE
 }
 function get_mem() {
@@ -212,7 +212,7 @@ function init_app() {
 
 	#~ echo $($(get_profile ".data1.cde"))
 
-    # display static labels 
+    # display static labels
     clear
     cursoroff
     # X Y position & print label
@@ -253,7 +253,7 @@ function progressbar() {
         fi
         print $BAR
         #~ echo "\xA2\x$BAR\x00" > $LCD
-    done    
+    done
 }
 function print_line() {
     # parameters details:
@@ -275,7 +275,7 @@ function print_line() {
     # - it's fail with parameter, ex: get_cache_sensor ."amdgpu-pci-0900".edge.temp1_input
     #~ DATA_STR=echo $($(echo $PROFILE_CONTENT | jq ".data$IDX.get_data_function" | tr -d '"'))
     #~ DATA_FUNC=$(get_profile ".data$IDX.get_data_function")
-    #~ echo "print_line:214 DATA_FUNC="$DATA_FUNC 
+    #~ echo "print_line:214 DATA_FUNC="$DATA_FUNC
     #~ DATA_STR=$($DATA_FUNC)
     #~ echo "print_line:216 DATA_STR="$DATA_STR
     # data_method:
@@ -290,9 +290,9 @@ function print_line() {
     esac
     # formating
     # switch . by , decimal for printf compatibility
-    DATA_FLOAT=$(echo $DATA_STR | tr "." ",")   
+    DATA_FLOAT=$(echo $DATA_STR | tr "." ",")
     # convert to integer (without decimal)
-    DATA_INT=$(printf "%.0f" $DATA_FLOAT)       
+    DATA_INT=$(printf "%.0f" $DATA_FLOAT)
     DATA_DISPLAY=$(format $DATA_FLOAT $DATA_FORMAT $DATA_UNIT)
     # display
     printxy $DATA_X $DATA_Y $DATA_DISPLAY
@@ -378,14 +378,14 @@ function gpufan() {
     progressbar $X_BAR $Y_VAL $BAR_SIZE $VALUE_INT $MINI $MAXI
 }
 function disk() {
-    df -h | grep -E "/home" | awk 
+    df -h | grep -E "/home" | awk
 }
 function uptime() {
     uptime -s | awk "{print $2}" > $LCD
     # uptime -s > $LCD
 }
 function loop() {
-    # first parameter number control 
+    # first parameter number control
     if [[ $1 =~ [0-9]+ ]]; then
         # init display, print motherboard name, load font, print static label
         init_app

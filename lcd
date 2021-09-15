@@ -2,6 +2,8 @@
 
 # USB serial port for LCD display
 LCD=/dev/ttyUSB0
+LOG_FILE=lcd.log
+echo "=== START ===" > $LOG_FILE
 
 # ======================================================
 # Usage: ./lcd loop 2   #for monitoring every 2 seconds
@@ -108,20 +110,41 @@ function Set_cache_sensors_json() {
 function get_profile() {
     # parameters details:
     PROFILE_NAMESPACE=$1
+    VALUE=0
     # get value in str format from json profile file
     if [[ $PROFILE_NAMESPACE == *"namespace"* ]] ; then
-        # sensors_namespace adaptation: swich single cote and double cote
-        PROFILE_NAMESPACE=$(echo $PROFILE_NAMESPACE | tr '"' '|' | tr "'" '"' | tr '|' "'")
-        echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"' | tr "'" '"')
+		#echo "get_profile: PROFILE_NAMESPACE: " $PROFILE_NAMESPACE >> $LOG_FILE
+        ## sensors_namespace adaptation: swich single cote and double cote, replace # by space
+        
+        #~ PROFILE_NAMESPACE_SENSOR=$(echo $PROFILE_NAMESPACE | tr "#" " " | tr '"' "@" | tr "'" '"' | tr "@" "'")
+        
+        PROFILE_NAMESPACE_SENSOR=$(echo $PROFILE_NAMESPACE | sed 's/Core#/Core\ /g')   
+        #~ PROFILE_NAMESPACE_SENSOR=$(echo $PROFILE_NAMESPACE | tr '"' "'" | sed 's/Core#/Core\ /g' | tr "'" '"')	# echo $PROFILE_NAMESPACE | sed 's/"/"''"/g'   
+
+        echo "get_profile.PROFILE_NAMESPACE_SENSOR: " $PROFILE_NAMESPACE_SENSOR >> $LOG_FILE
+        
+        VALUE=$(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE_SENSOR)
+        echo "get_profile.VALUE: " $VALUE >> $LOG_FILE
+        
     else
-        echo $(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"')
+        VALUE=$(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"')
     fi
+    echo $VALUE
 }
 function get_cache_sensor() {
     # parameters details:
     SENSOR_NAMESPACE=$1
+    VALUE=0.1
     # get value in str format from json sensors cache
-    echo $(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE)
+    echo "get_cache_sensor.SENSOR_NAMESPACE: " $SENSOR_NAMESPACE >> $LOG_FILE
+    # echo "get_cache_sensor.SENSOR_NAMESPACE: " $(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE) >> $LOG_FILE
+    
+    #~ echo "get_cache_sensor.CACHE_SENSORS_JSON: " $CACHE_SENSORS_JSON >> $LOG_FILE
+    #~ echo "===	Sensor end	===" >> $LOG_FILE
+    
+    VALUE=$echo $(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE)
+    echo "get_cache_sensor.VALUE: " $VALUE >> $LOG_FILE
+    echo $VALUE
 }
 function get_mem() {
     # return % memory used
@@ -186,11 +209,14 @@ function init_app() {
         sleep 0.1
     done
     sleep 1
+
+	#~ echo $($(get_profile ".data1.cde"))
+
     # display static labels 
     clear
     cursoroff
     # X Y position & print label
-    for idx in $(seq 1 4) ; do
+    for idx in $(seq 1 2) ; do
         printxy $(get_profile ".data$idx.label_x") $(get_profile ".data$idx.label_y") $(get_profile ".data$idx.label")
     done
 }
@@ -256,6 +282,7 @@ function print_line() {
     case $(get_profile ".data$IDX.data_method") in
         sensors)
             DATA_STR=$(get_cache_sensor $(get_profile ".data$IDX.sensors_namespace"))
+			# debug
         ;;
         get_mem)
             DATA_STR=$(get_mem)
@@ -366,7 +393,7 @@ function loop() {
             # read sensors
             Set_cache_sensors_json
             # display data line by line on LCD
-            for idx in $( seq 1 4 ) ; do
+            for idx in $( seq 1 2 ) ; do
                 print_line $idx
             done
             #~ ram100  4 1 $(get_mem)

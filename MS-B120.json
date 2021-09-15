@@ -7,7 +7,7 @@
         "data_x": 4,
         "data_y": 0,
         "data_method": "sensors",
-        "sensors_namespace": ".'k10temp-pci-00c3'.Tctl.temp1_input",
+        "sensors_namespace": ".'coretemp-isa-0000'.'Core#0'.temp2_input",
         "get_data_function": "get_cache_sensor .'amdgpu-pci-0900'.edge.temp1_input",
         "data_format": "%5.1f",
         "data_unit": "C",

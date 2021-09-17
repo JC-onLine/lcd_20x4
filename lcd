@@ -124,6 +124,8 @@ function get_profile() {
         VALUE=$(echo $NS_BRUT | tr "#" " " | tr '"' "@" | tr "'" '"' | tr "@" "'")
         #~ echo "get_profile:\t NS_SENSOR:\t " $NS_SENSOR >> $LOG_FILE
         
+        #~ force manualy for test
+        VALUE='."coretemp-isa-0000"."Core 0".temp2_input'
         #~ VALUE=$(echo $PROFILE_CONTENT | jq $NS_SENSOR)
         echo "get_profile:\t VALUE:\t\t " $VALUE >> $LOG_FILE
     else

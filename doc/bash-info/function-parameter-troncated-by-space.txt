@@ -1,0 +1,24 @@
+For a test, in function get_profile(), VALUE is forced to '."coretemp-isa-0000"."Core 0".temp2_input' 
+
+Terminal trace:
+
+❯ ./lcd loop 10
+Profile file MS-B120.json read.
+jq: error: syntax error, unexpected $end, expecting QQSTRING_TEXT or QQSTRING_INTERP_START or QQSTRING_END (Unix shell quoting issues?) at <top-level>, line 1:
+."coretemp-isa-0000"."Core                      
+jq: 1 compile error
+^C
+
+Solution:
+
+function print_line() {
+    [..]
+    # data_method:
+    case $(get_profile ".data$IDX.data_method") in
+        sensors)
+            DATA_STR=$(get_cache_sensor "$(get_profile ".data$IDX.sensors_namespace")")   <-- here "$(get_profile ".data$IDX.sensors_namespace"
+        ;;
+        get_mem)
+            DATA_STR=$(get_mem)
+        ;;
+    esac

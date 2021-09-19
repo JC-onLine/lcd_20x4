@@ -18,7 +18,7 @@ function mother_board() {
     BOARD_PROFILE_CONTENT_NAME=$(echo $BOARD_NAME".json" | tr " " "-")
     # use profile file or create a snippets for example
     if [[ -e $BOARD_PROFILE_CONTENT_NAME ]]; then
-        echo "Profile file $BOARD_PROFILE_CONTENT_NAME read."
+        echo "Profile file $BOARD_PROFILE_CONTENT_NAME readed."
         # Get
         PROFILE_CONTENT=$(cat $BOARD_PROFILE_CONTENT_NAME)
         # Note: need to use double 'tr' to inverse ["] and [']
@@ -105,7 +105,7 @@ function format() {
 }
 function Set_cache_sensors_json() {
     # parameters:
-    CACHE_SENSORS_JSON=$(sensors -j)
+    CACHE_SENSORS_JSON=$(sensors -j 2>/dev/null)
 }
 function get_profile() {
     # parameters details:
@@ -192,6 +192,7 @@ function init_app() {
         print "2E"
         sleep 0.1
     done
+    echo "Fonts loaded."
     sleep 1
 
 	#~ echo $($(get_profile ".data1.cde"))
@@ -203,6 +204,7 @@ function init_app() {
     for idx in $(seq 1 2) ; do
         printxy $(get_profile ".data$idx.label_x") $(get_profile ".data$idx.label_y") $(get_profile ".data$idx.label")
     done
+    echo "Labels displayed."
 }
 function progressbar() {
     BAR_X=$1 # param1: X display position.
@@ -372,6 +374,7 @@ function loop() {
     if [[ $1 =~ [0-9]+ ]]; then
         # init display, print motherboard name, load font, print static label
         init_app
+        echo "Displaying monitoring."
         while [[ 1 ]]; do
             # read sensors
             Set_cache_sensors_json

@@ -3,7 +3,7 @@
 # USB serial port for LCD display
 LCD=/dev/ttyUSB0
 LOG_FILE=lcd.log
-echo "=== START ===" > $LOG_FILE
+#~ echo "=== START APP ===" > $LOG_FILE
 
 # ======================================================
 # Usage: ./lcd loop 2   #for monitoring every 2 seconds
@@ -113,23 +113,10 @@ function get_profile() {
     VALUE=0
     # get value in str format from json profile file
     if [[ $PROFILE_NAMESPACE == *"namespace"* ]] ; then
-		    echo "get_profile.PROFILE_NAMESPACE:\t" $PROFILE_NAMESPACE >> $LOG_FILE
-        ## sensors_namespace adaptation: swich single cote and double cote, replace # by space
-        #~ SENSOR_NAMESPACE=$(echo $PROFILE_NAMESPACE | tr '"' "'" | sed 's/Core#/Core\ /g' | tr "'" '"')	# echo $PROFILE_NAMESPACE | sed 's/"/"''"/g'
-        # SENSOR_NAMESPACE=$(echo $PROFILE_NAMESPACE | sed 's/Core#/Core\ /g')
-        #~ VALUE=$(echo $NS_BRUT | tr "#" " " | tr '"' "@" | tr "'" '"' | tr "@" "'")
-
+	    #~ get sensor namespace in current profile
         NS_BRUT=$(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE)
-        echo "get_profile.NS_BRUT:\t" $NS_BRUT >> $LOG_FILE
-        #~ NS_SENSOR=$(echo $NS_BRUT | tr "#" " " | tr '"' "@" | tr "'" '"' | tr "@" "'")
-        NS_SENSOR=$(echo $NS_BRUT | tr -d '"' | tr "'" '"')
-        echo "get_profile:\t NS_SENSOR:\t " $NS_SENSOR >> $LOG_FILE
-        #~ VALUE=$(echo $PROFILE_CONTENT | jq $NS_SENSOR)
-        VALUE=$(echo $NS_SENSOR)
-
-        #~ force manualy for test
-        #~ VALUE='."coretemp-isa-0000"."Core 0".temp2_input'
-        echo "get_profile.VALUE:\t" $VALUE >> $LOG_FILE
+        # sensors_namespace adaptation: delete double quote, replace single cote and double cote
+        VALUE=$(echo $NS_BRUT | tr -d '"' | tr "'" '"')
     else
         VALUE=$(echo $PROFILE_CONTENT | jq $PROFILE_NAMESPACE | tr -d '"')
     fi
@@ -140,10 +127,7 @@ function get_cache_sensor() {
     SENSOR_NAMESPACE=$1
     VALUE=0.1
     # get value in str format from json sensors cache
-    echo "get_cache_sensor.SENSOR_NAMESPACE:\t" $(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE) >> $LOG_FILE
     VALUE=$(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE)
-    echo "get_cache_sensor.VALUE:\t" $VALUE >> $LOG_FILE
-    echo "===	Sensor end	===" >> $LOG_FILE
     echo $VALUE
 }
 function get_mem() {

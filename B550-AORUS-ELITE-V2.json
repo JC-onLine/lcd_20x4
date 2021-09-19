@@ -1,6 +1,7 @@
 {
+    "data_max": 4,
     "data1":{
-        "cde": "ls -lh",
+        "enable": 1,
         "label": "CPU",
         "label_x": 0,
         "label_y": 0,
@@ -14,9 +15,11 @@
         "bargraph_x": "C",
         "bargraph_size": 8,
         "bargraph_mini": 30,
-        "bargraph_maxi": 80
+        "bargraph_maxi": 80,
+        "cde": "ls -lh"
     },
     "data2":{
+        "enable": 1,
         "label": "MEM",
         "label_x": 0,
         "label_y": 1,
@@ -33,6 +36,7 @@
         "bargraph_maxi": 100
     },
     "data3":{
+        "enable": 1,
         "label": "GPU",
         "label_x": 0,
         "label_y": 2,
@@ -49,6 +53,7 @@
         "bargraph_maxi": 80
     },
     "data4":{
+        "enable": 1,
         "label": "GPU",
         "label_x": 0,
         "label_y": 3,

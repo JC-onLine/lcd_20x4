@@ -18,9 +18,11 @@ function mother_board() {
     BOARD_PROFILE_CONTENT_NAME=$(echo $BOARD_NAME".json" | tr " " "-")
     # use profile file or create a snippets for example
     if [[ -e $BOARD_PROFILE_CONTENT_NAME ]]; then
-        echo "Profile file $BOARD_PROFILE_CONTENT_NAME readed."
-        # Get
+        # Get profile
         PROFILE_CONTENT=$(cat $BOARD_PROFILE_CONTENT_NAME)
+        # get data max number
+        PROFILE_DATA_MAX=$(echo $PROFILE_CONTENT | jq ".data_max")
+        echo "lcd: Profile file $BOARD_PROFILE_CONTENT_NAME readed ($PROFILE_DATA_MAX data max)."
         # Note: need to use double 'tr' to inverse ["] and [']
         #       json data file need to begin and end with ["]
         #       'sensors' cli use [-] in namespace, so we must escape [-] with ["]
@@ -29,7 +31,7 @@ function mother_board() {
         # 1st step: delete ["]
         # 2nd step: replace ['] by ["]
     else
-        echo "Profile file $BOARD_PROFILE_CONTENT_NAME not found:"
+        echo "lcd: Profile file $BOARD_PROFILE_CONTENT_NAME not found:"
         cat sensors-snippets.json > $BOARD_PROFILE_CONTENT_NAME
         echo "    Snippets was created in file $BOARD_PROFILE_CONTENT_NAME."
         echo "    Please, complete the sensors namespace."
@@ -37,7 +39,6 @@ function mother_board() {
         echo "Press Ctrl+C to stop the script."
     fi
 }
-
 
 
 # ==== LOW LEVEL FUNCTIONS ====
@@ -192,7 +193,7 @@ function init_app() {
         print "2E"
         sleep 0.1
     done
-    echo "Fonts loaded."
+    echo "lcd: Fonts loaded."
     sleep 1
 
 	#~ echo $($(get_profile ".data1.cde"))
@@ -200,11 +201,8 @@ function init_app() {
     # display static labels
     clear
     cursoroff
-    # X Y position & print label
-    for idx in $(seq 1 2) ; do
-        printxy $(get_profile ".data$idx.label_x") $(get_profile ".data$idx.label_y") $(get_profile ".data$idx.label")
-    done
-    echo "Labels displayed."
+    print_labels
+    echo "lcd: Labels displayed."
 }
 function progressbar() {
     BAR_X=$1 # param1: X display position.
@@ -241,47 +239,65 @@ function progressbar() {
         #~ echo "\xA2\x$BAR\x00" > $LCD
     done
 }
-function print_line() {
-    # parameters details:
-    IDX=$1  # json data group index like data1, data2 ...
-    # settings details:
-    DATA_X=$(get_profile ".data$IDX.data_x")
-    DATA_Y=$(get_profile ".data$IDX.data_y")
-    DATA_FORMAT=$(get_profile ".data$IDX.data_format")
-    DATA_UNIT=$(get_profile ".data$IDX.data_unit")
-    DATA_METHOD=$(get_profile ".data$IDX.data_method")
-    BAR_X=$(get_profile ".data$IDX.bargraph_x")
-    BAR_SIZE=$(get_profile ".data$IDX.bargraph_size")
-    BAR_MINI=$(get_profile ".data$IDX.bargraph_mini")
-    BAR_MAXI=$(get_profile ".data$IDX.bargraph_maxi")
-    # get data from sensors or system
-    DATA_STR="0.1"
-    # this commented code is a test tu use fonction directly from json file settings:
-    # - it's running without paremeter, ex: get_mem
-    # - it's fail with parameter, ex: get_cache_sensor ."amdgpu-pci-0900".edge.temp1_input
-    #~ DATA_STR=echo $($(echo $PROFILE_CONTENT | jq ".data$IDX.get_data_function" | tr -d '"'))
-    #~ DATA_FUNC=$(get_profile ".data$IDX.get_data_function")
-    #~ echo "print_line:214 DATA_FUNC="$DATA_FUNC
-    #~ DATA_STR=$($DATA_FUNC)
-    #~ echo "print_line:216 DATA_STR="$DATA_STR
-    # data_method:
-    case $(get_profile ".data$IDX.data_method") in
-        sensors)
-            DATA_STR=$(get_cache_sensor "$(get_profile ".data$IDX.sensors_namespace")")
-        ;;
-        get_mem)
-            DATA_STR=$(get_mem)
-        ;;
-    esac
-    # formating
-    # switch . by , decimal for printf compatibility
-    DATA_FLOAT=$(echo $DATA_STR | tr "." ",")
-    # convert to integer (without decimal)
-    DATA_INT=$(printf "%.0f" $DATA_FLOAT)
-    DATA_DISPLAY=$(format $DATA_FLOAT $DATA_FORMAT $DATA_UNIT)
-    # display
-    printxy $DATA_X $DATA_Y $DATA_DISPLAY
-    progressbar $BAR_X $DATA_Y $BAR_SIZE $DATA_INT $BAR_MINI $BAR_MAXI
+function print_labels() {
+    echo "lcd: data.enable check:"
+    # print label if data enable
+    for IDX in $(seq 1 $PROFILE_DATA_MAX) ; do
+        # data enable ?
+        ENABLE=$(get_profile ".data$IDX.enable")
+        # get X Y position & print label if data enable
+        if [ $ENABLE -eq 1 ]; then
+            printxy $(get_profile ".data$IDX.label_x") $(get_profile ".data$IDX.label_y") $(get_profile ".data$IDX.label")
+        fi
+        echo "\tData$IDX.enable=$ENABLE"
+    done
+}
+function print_data() {
+    # display data line by line on LCD
+    for IDX in $( seq 1 $PROFILE_DATA_MAX ) ; do
+        # data enable ?
+        ENABLE=$(get_profile ".data$IDX.enable")
+        if [ $ENABLE -eq 1 ]; then
+            # settings details:
+            DATA_X=$(get_profile ".data$IDX.data_x")
+            DATA_Y=$(get_profile ".data$IDX.data_y")
+            DATA_FORMAT=$(get_profile ".data$IDX.data_format")
+            DATA_UNIT=$(get_profile ".data$IDX.data_unit")
+            DATA_METHOD=$(get_profile ".data$IDX.data_method")
+            BAR_X=$(get_profile ".data$IDX.bargraph_x")
+            BAR_SIZE=$(get_profile ".data$IDX.bargraph_size")
+            BAR_MINI=$(get_profile ".data$IDX.bargraph_mini")
+            BAR_MAXI=$(get_profile ".data$IDX.bargraph_maxi")
+            # get data from sensors or system
+            DATA_STR="0.1"
+            # this commented code is a test tu use fonction directly from json file settings:
+            # - it's running without paremeter, ex: get_mem
+            # - it's fail with parameter, ex: get_cache_sensor ."amdgpu-pci-0900".edge.temp1_input
+            #~ DATA_STR=echo $($(echo $PROFILE_CONTENT | jq ".data$IDX.get_data_function" | tr -d '"'))
+            #~ DATA_FUNC=$(get_profile ".data$IDX.get_data_function")
+            #~ echo "print_line:214 DATA_FUNC="$DATA_FUNC
+            #~ DATA_STR=$($DATA_FUNC)
+            #~ echo "print_line:216 DATA_STR="$DATA_STR
+            # data_method:
+            case $(get_profile ".data$IDX.data_method") in
+                sensors)
+                    DATA_STR=$(get_cache_sensor "$(get_profile ".data$IDX.sensors_namespace")")
+                ;;
+                get_mem)
+                    DATA_STR=$(get_mem)
+                ;;
+            esac
+            # formating
+            # switch . by , decimal for printf compatibility
+            DATA_FLOAT=$(echo $DATA_STR | tr "." ",")
+            # convert to integer (without decimal)
+            DATA_INT=$(printf "%.0f" $DATA_FLOAT)
+            DATA_DISPLAY=$(format $DATA_FLOAT $DATA_FORMAT $DATA_UNIT)
+            # display
+            printxy $DATA_X $DATA_Y $DATA_DISPLAY
+            progressbar $BAR_X $DATA_Y $BAR_SIZE $DATA_INT $BAR_MINI $BAR_MAXI
+        fi
+    done
 }
 function cputemp() {
     # parameters details:
@@ -374,15 +390,12 @@ function loop() {
     if [[ $1 =~ [0-9]+ ]]; then
         # init display, print motherboard name, load font, print static label
         init_app
-        echo "Displaying monitoring."
+        echo "lcd: Monitoring is displaying."
         while [[ 1 ]]; do
             # read sensors
             Set_cache_sensors_json
             # display data line by line on LCD
-            for idx in $( seq 1 2 ) ; do
-                print_line $idx
-            done
-            #~ ram100  4 1 $(get_mem)
+            print_data
             sleep $1
         done
     else

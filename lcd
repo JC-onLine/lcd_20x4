@@ -3,6 +3,7 @@
 # USB serial port for LCD display
 LCD=/dev/ttyUSB0
 LOG_FILE=lcd.log
+PROFILES_FOLDER="profiles/"
 #~ echo "=== START APP ===" > $LOG_FILE
 
 # ======================================================
@@ -16,13 +17,14 @@ function mother_board() {
     BOARD_NAME=$(cat /sys/devices/virtual/dmi/id/board_name)
     # Compose profile file name
     BOARD_PROFILE_CONTENT_NAME=$(echo $BOARD_NAME".json" | tr " " "-")
+    PROFILE_FILE=$(echo $PROFILES_FOLDER$BOARD_PROFILE_CONTENT_NAME)
     # use profile file or create a snippets for example
-    if [[ -e $BOARD_PROFILE_CONTENT_NAME ]]; then
+    if [[ -e $PROFILE_FILE ]]; then
         # Get profile
-        PROFILE_CONTENT=$(cat $BOARD_PROFILE_CONTENT_NAME)
+        PROFILE_CONTENT=$(cat $PROFILE_FILE)
         # get data max number
         PROFILE_DATA_MAX=$(echo $PROFILE_CONTENT | jq ".data_max")
-        echo "lcd: Profile file $BOARD_PROFILE_CONTENT_NAME readed ($PROFILE_DATA_MAX data max)."
+        echo "lcd: Profile file $PROFILE_FILE readed ($PROFILE_DATA_MAX data max)."
         # Note: need to use double 'tr' to inverse ["] and [']
         #       json data file need to begin and end with ["]
         #       'sensors' cli use [-] in namespace, so we must escape [-] with ["]
@@ -31,12 +33,12 @@ function mother_board() {
         # 1st step: delete ["]
         # 2nd step: replace ['] by ["]
     else
-        echo "lcd: Profile file $BOARD_PROFILE_CONTENT_NAME not found:"
-        cat sensors-snippets.json > $BOARD_PROFILE_CONTENT_NAME
-        echo "    Snippets was created in file $BOARD_PROFILE_CONTENT_NAME."
+        echo "lcd: Profile file $PROFILE_FILE not found:"
+        cat $PROFILES_FOLDER"sensors-snippets.json" > $PROFILE_FILE
+        echo "    Snippets was copied to file $PROFILE_FILE."
         echo "    Please, complete the sensors namespace."
-        echo "    Use sensors -j to have sensors namespaces details."
-        echo "Press Ctrl+C to stop the script."
+        echo "    Use sensors -j to have sensors namespaces details for your motherboard."
+        exit 0
     fi
 }
 

@@ -266,6 +266,7 @@ function print_data() {
             DATA_FORMAT=$(get_profile ".data$IDX.data_format")
             DATA_UNIT=$(get_profile ".data$IDX.data_unit")
             DATA_METHOD=$(get_profile ".data$IDX.data_method")
+            GET_DATA_FUNCTION=$(get_profile ".data$IDX.get_data_function")
             BAR_X=$(get_profile ".data$IDX.bargraph_x")
             BAR_SIZE=$(get_profile ".data$IDX.bargraph_size")
             BAR_MINI=$(get_profile ".data$IDX.bargraph_mini")
@@ -287,6 +288,10 @@ function print_data() {
                 ;;
                 get_mem)
                     DATA_STR=$(get_mem)
+                ;;
+                external)
+                    GET_DATA_FUNCTION=$(get_profile ".data4.get_data_function")
+                    DATA_STR=$(eval $GET_DATA_FUNCTION)
                 ;;
             esac
             # formating

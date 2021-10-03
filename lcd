@@ -213,14 +213,13 @@ function progressbar() {
     VALUE=$4 # param4: Value.
     MINI=$5  # param5: Mini value.
     MAXI=$6  # param6: Maxi value.
+    # font bank
     BAR_ON="8"
     BAR_OFF="7"
     BAR_END="6"
     BAR_BEGIN="5"
     # Scale calcul
-    RANGE=$(($MAXI - $MINI))
-    SCALE=$(( ($BAR_L * ($MAXI - $VALUE)) / $RANGE ))
-    CAR_NB=$(( $BAR_L - SCALE - 1 ))
+    CAR_NB=$(( $BAR_L * $VALUE / $MAXI ))
     # Progressbar trace
     gotoxy $BAR_X $BAR_Y
     for (( i=1; i<=$BAR_L; i++ )); do
@@ -266,6 +265,7 @@ function print_data() {
             DATA_FORMAT=$(get_profile ".data$IDX.data_format")
             DATA_UNIT=$(get_profile ".data$IDX.data_unit")
             DATA_METHOD=$(get_profile ".data$IDX.data_method")
+            GET_DATA_FUNCTION=$(get_profile ".data$IDX.get_data_function")
             BAR_X=$(get_profile ".data$IDX.bargraph_x")
             BAR_SIZE=$(get_profile ".data$IDX.bargraph_size")
             BAR_MINI=$(get_profile ".data$IDX.bargraph_mini")
@@ -287,6 +287,10 @@ function print_data() {
                 ;;
                 get_mem)
                     DATA_STR=$(get_mem)
+                ;;
+                external)
+                    GET_DATA_FUNCTION=$(get_profile ".data$IDX.get_data_function")
+                    DATA_STR=$(eval $GET_DATA_FUNCTION)
                 ;;
             esac
             # formating

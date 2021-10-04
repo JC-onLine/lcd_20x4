@@ -20,11 +20,28 @@
  },
     "data2":{
         "enable": 1,
-        "label": "CPU",
+        "label": "AVG",
         "label_x": 0,
         "label_y": 1,
         "data_x": 4,
         "data_y": 1,
+        "data_method": "external",
+        "sensors_namespace": "",
+        "get_data_function": "cat /proc/loadavg | awk '{print $1}'",
+        "data_format": "%6.2f",
+        "data_unit": " ",
+        "bargraph_x": "C",
+        "bargraph_size": 8,
+        "bargraph_mini": 0,
+        "bargraph_maxi": 4
+    },
+    "data3":{
+        "enable": 1,
+        "label": "CPU",
+        "label_x": 0,
+        "label_y": 2,
+        "data_x": 4,
+        "data_y": 2,
         "data_method": "sensors",
         "sensors_namespace": ".'coretemp-isa-0000'.'Core 0'.temp2_input",
         "get_data_function": "get_cache_sensor .'amdgpu-pci-0900'.edge.temp1_input",
@@ -36,13 +53,13 @@
         "bargraph_maxi": 80,
         "cde": "ls -lh"
     },
-    "data3":{
+    "data4":{
         "enable": 1,
         "label": "MEM",
         "label_x": 0,
-        "label_y": 2,
+        "label_y": 3,
         "data_x": 4,
-        "data_y": 2,
+        "data_y": 3,
         "data_method": "get_mem",
         "sensors_namespace": "",
         "get_data_function": "'get_mem'",
@@ -52,22 +69,5 @@
         "bargraph_size": 8,
         "bargraph_mini": 0,
         "bargraph_maxi": 100
-    },
-    "data4":{
-        "enable": 1,
-        "label": "AVG",
-        "label_x": 0,
-        "label_y": 3,
-        "data_x": 4,
-        "data_y": 3,
-        "data_method": "external",
-        "sensors_namespace": "",
-        "get_data_function": "cat /proc/loadavg | awk '{print $1}'",
-        "data_format": "%5.2f",
-        "data_unit": " ",
-        "bargraph_x": "C",
-        "bargraph_size": 8,
-        "bargraph_mini": 0,
-        "bargraph_maxi": 4
     }
 }

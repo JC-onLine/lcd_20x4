@@ -133,13 +133,9 @@ function get_cache_sensor() {
     VALUE=$(echo $CACHE_SENSORS_JSON | jq $SENSOR_NAMESPACE)
     echo $VALUE
 }
-function get_mem() {
-    # return % memory used
-    echo $(free | grep "Mem" | awk '{printf "%5.2f", (100 * $3 / $2)}')
-}
 
 
-        declare -A DATA1
+    declare -A DATA1
 # ==== HIGH LEVEL FUNCTIONS ====
 function get_settings() {
     # 4 array of hash to get json profile settings in variables images
@@ -184,8 +180,6 @@ function init_app() {
     init_lcd
     # print motherboard name
     mother_board
-    # uncomment for test only: print get_mem value on app startup
-    #~ echo $($(echo $PROFILE_CONTENT | jq ".data2.data_method" | tr -d '"'))
     printxy 0 0 "Motherboard:"
     printxy 0 1 $BOARD_NAME
     # load font
@@ -265,32 +259,21 @@ function print_data() {
             DATA_FORMAT=$(get_profile ".data$IDX.data_format")
             DATA_UNIT=$(get_profile ".data$IDX.data_unit")
             DATA_METHOD=$(get_profile ".data$IDX.data_method")
-            GET_DATA_FUNCTION=$(get_profile ".data$IDX.get_data_function")
+            EXTERNAL_FUNCTION=$(get_profile ".data$IDX.external_function")
             BAR_X=$(get_profile ".data$IDX.bargraph_x")
             BAR_SIZE=$(get_profile ".data$IDX.bargraph_size")
             BAR_MINI=$(get_profile ".data$IDX.bargraph_mini")
             BAR_MAXI=$(get_profile ".data$IDX.bargraph_maxi")
             # get data from sensors or system
             DATA_STR="0.1"
-            # this commented code is a test tu use fonction directly from json file settings:
-            # - it's running without paremeter, ex: get_mem
-            # - it's fail with parameter, ex: get_cache_sensor ."amdgpu-pci-0900".edge.temp1_input
-            #~ DATA_STR=echo $($(echo $PROFILE_CONTENT | jq ".data$IDX.get_data_function" | tr -d '"'))
-            #~ DATA_FUNC=$(get_profile ".data$IDX.get_data_function")
-            #~ echo "print_line:214 DATA_FUNC="$DATA_FUNC
-            #~ DATA_STR=$($DATA_FUNC)
-            #~ echo "print_line:216 DATA_STR="$DATA_STR
             # data_method:
             case $(get_profile ".data$IDX.data_method") in
                 sensors)
                     DATA_STR=$(get_cache_sensor "$(get_profile ".data$IDX.sensors_namespace")")
                 ;;
-                get_mem)
-                    DATA_STR=$(get_mem)
-                ;;
                 external)
-                    GET_DATA_FUNCTION=$(get_profile ".data$IDX.get_data_function")
-                    DATA_STR=$(eval $GET_DATA_FUNCTION)
+                    #~ EXTERNAL_FUNCTION=$(get_profile ".data$IDX.external_function")
+                    DATA_STR=$(eval $EXTERNAL_FUNCTION)
                 ;;
             esac
             # formating

@@ -32,7 +32,7 @@
         "bargraph_x": "C",
         "bargraph_size": 8,
         "bargraph_mini": 0,
-        "bargraph_maxi": 4
+        "bargraph_maxi": 8
     },
     "data3":{
         "enable": 1,
